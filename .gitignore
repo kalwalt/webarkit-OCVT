@@ -102,3 +102,8 @@ dist
 
 # TernJS port file
 .tern-port
+
+# custom
+opencv
+build/libwebarkit.bc
+opencv-em
