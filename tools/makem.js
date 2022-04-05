@@ -15,7 +15,6 @@ var
 const platform = os.platform();
 
 var NO_LIBAR = false;
-var WITH_FILTERING = 1;
 
 var arguments = process.argv;
 
@@ -26,7 +25,7 @@ for (var j = 2; j < arguments.length; j++) {
 	};
 }
 
-var HAVE_NFT = 1;
+var HAVE_NFT = 0;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
@@ -67,9 +66,7 @@ MAIN_SOURCES = MAIN_SOURCES.map(function(src) {
   return path.resolve(SOURCE_PATH, src);
 }).join(' ');
 
-let srcTest = path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/');
-
-let arSources, ar_sources;
+let ar_sources;
 
 if (platform === 'win32') {
 	var glob = require("glob");
@@ -161,16 +158,38 @@ var OCVT_sources = [
 	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVT/', src);
 });
 
+var webarkit_sources = [
+  "WebARKitTrackable2d.cpp",
+  "WebARKitTrackableNFT.cpp",
+  "WebARKitTrackerNFT.cpp",
+  "mapper.cpp",
+  "WebARKit_c.cpp",
+  "WebARKitTrackable.cpp",
+  "WebARKitTrackableSquare.cpp",
+  "WebARKitTrackerSquare.cpp",
+  "WebARKitController.cpp",
+  "WebARKitTrackableMultiSquareAuto.cpp",
+  "WebARKitTracker2d.cpp",
+  "WebARKitVideoSource.cpp",
+  "trackingSub.c",
+  "WebARKitPattern.cpp",
+  "WebARKitTrackableMultiSquare.cpp",
+  "WebARKitTracker.cpp",
+  "WebARKitVideoView.cpp",
+].map(function(src) {
+	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/WebARKit/', src);
+});
+
 if (HAVE_NFT) {
   ar_sources = ar_sources
   .concat(ar2_sources)
-  .concat(kpm_sources)
+  //.concat(kpm_sources)
   .concat(OCVT_sources)
+  .concat(webarkit_sources)
 }
 
 var DEFINES = ' ';
 if (HAVE_NFT) DEFINES += ' -D HAVE_NFT ';
-if (WITH_FILTERING) DEFINES += ' -D WITH_FILTERING ';
 DEFINES += ' -D ARX_TARGET_PLATFORM_EMSCRIPTEN';
 
 var FLAGS = '' + OPTIMIZE_FLAGS;
@@ -179,7 +198,7 @@ FLAGS += ' -s TOTAL_MEMORY=' + MEM + ' ';
 FLAGS += ' -s USE_ZLIB=1';
 FLAGS += ' -s USE_LIBJPEG';
 FLAGS += ' --memory-init-file 0 '; // for memless file
-FLAGS += ' -s "EXTRA_EXPORTED_RUNTIME_METHODS=[\'FS\']"';
+FLAGS += ' -s "EXPORTED_RUNTIME_METHODS=[\'FS\']"';
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
 FLAGS += ' -fsanitize=address '
 FLAGS += ' -s ASSERTIONS=1 '
@@ -335,7 +354,7 @@ addJob(clean_builds);
 addJob(compile_arlib);
 //addJob(compile_combine);
 //addJob(compile_wasm);
-addJob(compile_wasm_es6)
+//addJob(compile_wasm_es6)
 //addJob(compile_combine_min);
 
 if (NO_LIBAR == true){
