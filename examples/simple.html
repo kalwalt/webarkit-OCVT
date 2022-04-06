@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A simple example with webarkit-OCVT</title>
+</head>
+
+<body>
+    <script src="../dist/WebARKit.js"></script>
+    <script>
+        var webarkit = new WebARKit.WebARKit();
+        webarkit.init()
+            .then((w) => {
+                var version = w.getARToolKitVersion()
+                console.log(version); // this should print the ARToolKit version
+                w.initialiseAR() // this should print: webarkit_ES6_wasm.js:8 [info] webarkit v5.4.0 initialised.
+            })
+    </script>
+</body>
+
+</html>
