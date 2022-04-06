@@ -5,12 +5,12 @@ using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(constant_bindings) {
 
-    enum_<arLogLevel>("arLogLevel")
-        .value("AR_LOG_LEVEL_DEBUG", arLogLevel::AR_LOG_LEVEL_DEBUG)
-        .value("AR_LOG_LEVEL_INFO", arLogLevel::AR_LOG_LEVEL_INFO)
-        .value("AR_LOG_LEVEL_WARN", arLogLevel::AR_LOG_LEVEL_INFO)
-        .value("AR_LOG_LEVEL_ERROR", arLogLevel::AR_LOG_LEVEL_ERROR)
-        .value("AR_LOG_LEVEL_REL_INFO", arLogLevel::AR_LOG_LEVEL_REL_INFO)
+    enum_<ARLogLevel>("arLogLevel")
+        .value("AR_LOG_LEVEL_DEBUG", ARLogLevel::AR_LOG_LEVEL_DEBUG)
+        .value("AR_LOG_LEVEL_INFO", ARLogLevel::AR_LOG_LEVEL_INFO)
+        .value("AR_LOG_LEVEL_WARN", ARLogLevel::AR_LOG_LEVEL_INFO)
+        .value("AR_LOG_LEVEL_ERROR", ARLogLevel::AR_LOG_LEVEL_ERROR)
+        .value("AR_LOG_LEVEL_REL_INFO", ARLogLevel::AR_LOG_LEVEL_REL_INFO)
     ;
 
     function("setLogLevel", &arwSetLogLevel);

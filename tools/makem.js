@@ -9,8 +9,7 @@ var
 	exec = require('child_process').exec,
 	path = require('path'),
 	fs = require('fs'),
-	os = require('os'),
-	child;
+	os = require('os');
 
 const platform = os.platform();
 
@@ -26,6 +25,7 @@ for (var j = 2; j < arguments.length; j++) {
 }
 
 var HAVE_NFT = 0;
+var HAVE_2D = 1;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
@@ -50,7 +50,7 @@ var BUILD_WASM_ES6_FILE = 'webarkit_ES6_wasm.js';
 var BUILD_MIN_FILE = 'webarkit.min.js';
 
 var MAIN_SOURCES = [
-	'WebARKitJS.cpp'
+	'WebARKit_js.cpp'
 ];
 
 if (!fs.existsSync(path.resolve(WEBARKITLIB_ROOT, 'include/AR/config.h'))) {
@@ -85,16 +85,32 @@ function matchAll(patterns, prefix="") {
   ar_sources = matchAll([
     'AR/arLabelingSub/*.c',
     'AR/*.c',
+    'ARG/mtx.c',
     'ARICP/*.c',
+    'ARMulti/arMultiEditConfig.c',
+    'ARMulti/arMultiFreeConfig.c',
+    'ARMulti/arMultiGetTransMat.c',
+    'ARMulti/arMultiGetTransMatStereo.c',
+    'ARMulti/arMultiReadConfigFile.c',
+    'ARUtil/image_utils.cpp',
     'ARUtil/log.c',
+    'ARUtil/time.c',
     'ARUtil/file_utils.c',
 ]);
 } else {
 	ar_sources = [
 	  'AR/arLabelingSub/*.c',
 	  'AR/*.c',
+      'ARG/mtx.c',
 	  'ARICP/*.c',
+      'ARMulti/arMultiEditConfig.c',
+      'ARMulti/arMultiFreeConfig.c',
+      'ARMulti/arMultiGetTransMat.c',
+      'ARMulti/arMultiGetTransMatStereo.c',
+      'ARMulti/arMultiReadConfigFile.c',
+      'ARUtil/image_utils.cpp',
 	  'ARUtil/log.c',
+      'ARUtil/time.c',
 	  'ARUtil/file_utils.c',
 	].map(function(src) {
 		return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/', src);
@@ -120,6 +136,22 @@ var ar2_sources = [
     'util.c',
 ].map(function(src) {
 	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/AR2/', src);
+});
+
+var arvideo_sources = [
+    'cparamSearch.c',
+    'nxjson.c',
+    'video.c',
+    'video2.c',
+    'videoAspectRatio.c',
+    'videoLuma.c',
+    'videoRGBA.c',
+    'videoSaveImage.c',
+    'Dummy/videoDummy.c',
+    'Image/videoImage.c',
+    'Web/videoWeb.c'
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/ARVideo', src);
 });
 
 var kpm_sources = [
@@ -158,6 +190,10 @@ var OCVT_sources = [
 	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVT/', src);
 });
 
+/*var OCVTUtil_sources = [ "image_utils.cpp"].map(function(src) {
+	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVTUtil/', src);
+});*/
+
 var webarkit_sources = [
   "WebARKitTrackable2d.cpp",
   "WebARKitTrackableNFT.cpp",
@@ -181,16 +217,36 @@ var webarkit_sources = [
 });
 
 if (HAVE_NFT) {
+  if (HAVE_NFT && HAVE_2D) {
+    ar_sources = ar_sources
+      .concat(ar2_sources)
+      .concat(arvideo_sources)
+      .concat(kpm_sources)
+      .concat(OCVT_sources)
+      //.concat(OCVTUtil_sources)
+      .concat(webarkit_sources);
+  } else {
+    ar_sources = ar_sources
+      .concat(ar2_sources)
+      .concat(arvideo_sources)
+      .concat(kpm_sources)
+      .concat(webarkit_sources);
+  }
+} else if (HAVE_2D) {
   ar_sources = ar_sources
-  .concat(ar2_sources)
-  //.concat(kpm_sources)
-  .concat(OCVT_sources)
-  .concat(webarkit_sources)
+    .concat(ar2_sources)
+    .concat(arvideo_sources)
+    .concat(OCVT_sources)
+    //.concat(OCVTUtil_sources)
+    .concat(webarkit_sources);
 }
 
-var DEFINES = ' ';
-if (HAVE_NFT) DEFINES += ' -D HAVE_NFT ';
-DEFINES += ' -D ARX_TARGET_PLATFORM_EMSCRIPTEN';
+var DEFINES = " ";
+if (HAVE_NFT) DEFINES += " -D HAVE_NFT ";
+if (HAVE_2D) DEFINES += " -D HAVE_2D ";
+DEFINES += "  -DARX_EXPORTS=1 -D ARX_TARGET_PLATFORM_EMSCRIPTEN -DARVIDEO_INPUT_WEB ";
+
+//ARVIDEO_DEFINES = ' -DARVIDEO_INPUT_DUMMY -DARVIDEO_INPUT_IMAGE -DARVIDEO_INPUT_WEB '
 
 var FLAGS = '' + OPTIMIZE_FLAGS;
 FLAGS += ' -Wno-warn-absolute-paths ';
@@ -200,12 +256,19 @@ FLAGS += ' -s USE_LIBJPEG';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s "EXPORTED_RUNTIME_METHODS=[\'FS\']"';
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
-FLAGS += ' -fsanitize=address '
-FLAGS += ' -s ASSERTIONS=1 '
+FLAGS += ' --llvm-lto 1 -s INVOKE_RUN=0 -msse -msse2 -msse3 -mssse3 -msimd128 '
+//FLAGS += ' -fsanitize=address '
+//FLAGS += ' -s ASSERTIONS=1 '
 //FLAGS += ' -s SAFE_HEAP=1 '
 
-var WASM_FLAGS = ' -s SINGLE_FILE=1 '
-var ES6_FLAGS = ' -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s MODULARIZE=1 ';
+//var WASM_FLAGS = ' -s SINGLE_FILE=1 '
+var WASM_FLAGS = ' '
+//var ES6_FLAGS = ' -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s MODULARIZE=1 ';
+var EXPORT_FUNCTIONS = " -s EXPORTED_FUNCTIONS='['_arwUpdateAR', '_arwCapture', '_arwGetProjectionMatrix', '_arwQueryTrackableVisibilityAndTransformation', '_arwGetTrackablePatternConfig', '_arwGetTrackablePatternImage', '_arwLoadOpticalParams']' ";
+var EXPORTED_RUNTIME_FUNCTIONS = " -s EXPORTED_RUNTIME_METHODS='['ccall', 'cwrap', 'FS', 'setValue']' ";
+var WASM_FLAGS_SINGLE_FILE = " -s SINGLE_FILE=1 ";
+var ES6_FLAGS = " -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s EXPORT_NAME='webarkit' -s MODULARIZE=1 ";
+var POST_FLAGS = " --post-js " + path.resolve(__dirname, "../emscripten/") + "/WebARKit_additions.js ";
 
 var PRE_FLAGS = ' --pre-js ' + path.resolve(__dirname, '../js/webarkit.api.js') +' ';
 
@@ -220,7 +283,7 @@ DEBUG_FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
 
 var INCLUDES = [
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/include'),
-    path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVT/include/ARX/OCVT'),
+    path.resolve(__dirname, '../emscripten'),
 		path.resolve(__dirname, '../opencv/include'),
 		path.resolve(__dirname, '../opencv/modules/calib3d/include'),
 		path.resolve(__dirname, '../opencv/modules/core/include'),
@@ -245,9 +308,9 @@ var OPENCV_LIBS = [
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_dnn.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_features2d.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_flann.a'),
-    path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_imgcodecs.a'),
+    //path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_imgcodecs.a'),
     path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_imgproc.a'),
-	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_highgui.a'),
+	//path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_highgui.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_objdetect.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_photo.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_video.a'),
@@ -308,9 +371,12 @@ var compile_wasm = format(EMCC + ' ' + INCLUDES + ' '
     OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_FILE);
 
 var compile_wasm_es6 = format(EMCC + ' ' + INCLUDES + ' '
-		 + ALL_BC + MAIN_SOURCES
-		 + FLAGS + WASM_FLAGS + DEFINES + ES6_FLAGS + OPENCV_LIBS + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
-		 OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_ES6_FILE);
+    + MAIN_SOURCES  + ALL_BC
+    + WASM_FLAGS + OPENCV_LIBS
+    + FLAGS + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
+    + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS + POST_FLAGS + '-s LLD_REPORT_UNDEFINED ' +
+    ' -o {OUTPUT_PATH}{BUILD_FILE} ',
+    OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_ES6_FILE);
 
 /*
  * Run commands
@@ -354,7 +420,7 @@ addJob(clean_builds);
 addJob(compile_arlib);
 //addJob(compile_combine);
 //addJob(compile_wasm);
-//addJob(compile_wasm_es6)
+addJob(compile_wasm_es6)
 //addJob(compile_combine_min);
 
 if (NO_LIBAR == true){
