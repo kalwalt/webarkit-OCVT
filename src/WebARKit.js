@@ -101,4 +101,55 @@ export default class WebARKit {
       }
     }
   }
+  async loadCameraParam(urlOrData){
+    return new Promise((resolve, reject) => {
+      const filename = '/camera_param_' + this.cameraCount++
+      if (typeof urlOrData === 'object' || urlOrData.indexOf('\n') > -1) { // Maybe it's a byte array
+      //if (url) {
+        const byteArray = urlOrData
+        const target = filename
+        this._storeDataFile(byteArray, target);
+        if (target) {
+          resolve(filename)
+        } else {
+          reject(new Error('Error'))
+        }
+      } else {
+        fetch(urlOrData)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not OK');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    blob.arrayBuffer().then(buff => {
+                        let buffer = new Uint8Array(buff)
+                        this._storeDataFile(buffer, filename);
+                        resolve(buffer)
+                    })
+                })
+                .catch(error => {
+                    errorCallback(error)
+                });
+        }
+      
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+
+  // implementation
+  /**
+   * Used internally by LoadCamera method
+   * @return {void}
+   */
+   _storeDataFile (data, target) {
+    // FS is provided by emscripten
+    // Note: valid data must be in binary format encoded as Uint8Array
+    this.FS.writeFile(target, data, {
+      encoding: 'binary'
+    })
+  }
+
 }
