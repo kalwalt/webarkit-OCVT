@@ -1,34 +1,78 @@
 import webarkit from '../build/webarkit_ES6_wasm'
 
+declare global {
+  namespace NodeJS {
+    interface Global {
+      webarkit: any;
+    }
+  }
+  interface Window {
+    webarkit: any;
+  }
+}
+
+export interface WebARKitPipeline {
+  trackableLoaded?: (trackableId: number) => void;
+  trackablesLoaded?: (trackableIds: number[]) => void;
+  initialized: (cameraMatrix: number[]) => void;
+  tracking: (world: any, trackableId: number) => void;
+  trackingLost: () => void;
+  process: () => void;
+}
+
 export default class WebARKit {
+  public instance: any;
+  private pipeline: WebARKitPipeline;
+  private cameraCount: number;
+  private version: string;
+
   // construction
-  constructor () {
+  constructor (pipeline: WebARKitPipeline) {
     // reference to WASM module
     this.instance
+    this.pipeline = pipeline;
     this.version = '1.0.0'
     console.info('WebARKit ', this.version)
   }
   // ---------------------------------------------------------------------------
+  public startAR = async(url: string, videoWidth: number, videoHeight: number) => {
+    this.init()
+    .then(async(w) => {
+      w.instance.initialiseAR();
+      try {
+        var arCameraURL = await this.loadCameraParam(url)
+        .then(url => {
+            var success = w.instance.arwStartRunningJS(url, videoWidth, videoHeight)
+            console.log(success);
+        })
+    } catch (e) {
+        throw new Error('Error loading camera param: ' + e)
+    }
+    })
+   
+    
+
+    // TODO: camera opening process
+  }
 
   // initialization
-  async init () {
+  private init = async () => {
 
-    const runtime = await webarkit()
-    this.instance = runtime;
+    this.instance = await webarkit()
     this._decorate()
-    const scope = (typeof window !== 'undefined') ? window : global
+    let scope: any = typeof window !== "undefined" ? window : global;
     scope.webarkit = this
 
     return this
   }
 
    // private methods
-  /**
+   /**
    * Used internally to link the instance in the ModuleLoader to the
    * ARToolkitX internal methods.
    * @return {void}
    */
-   _decorate () {
+   private _decorate = () => {
     // add delegate methods
     [
       'setLogLevel',
@@ -92,16 +136,21 @@ export default class WebARKit {
       '_malloc',
       'FS'
     ].forEach(method => {
-      this[method] = this.instance[method]
+      this.converter()[method] = this.instance[method];
     })
     // expose constants
     for (const co in this.instance) {
       if (co.match(/^WebAR/)) {
-        this[co] = this.instance[co]
+        this.converter()[co] = this.instance[co];
       }
     }
   }
-  async loadCameraParam(urlOrData){
+
+  private converter = (): any => {
+    return this;
+  }
+
+  public loadCameraParam = async(urlOrData: any): Promise<string|Uint8Array> => {
     return new Promise((resolve, reject) => {
       const filename = '/camera_param_' + this.cameraCount++
       if (typeof urlOrData === 'object' || urlOrData.indexOf('\n') > -1) { // Maybe it's a byte array
@@ -130,7 +179,7 @@ export default class WebARKit {
                     })
                 })
                 .catch(error => {
-                    errorCallback(error)
+                    console.error(error)
                 });
         }
       
@@ -144,10 +193,10 @@ export default class WebARKit {
    * Used internally by LoadCamera method
    * @return {void}
    */
-   _storeDataFile (data, target) {
+   private _storeDataFile = (data: Uint8Array, target: string) => {
     // FS is provided by emscripten
     // Note: valid data must be in binary format encoded as Uint8Array
-    this.FS.writeFile(target, data, {
+    this.instance.FS.writeFile(target, data, {
       encoding: 'binary'
     })
   }

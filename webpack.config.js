@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/index.ts',
   output: {
     path: path.resolve('dist'),
     filename: 'WebARKit.js',
@@ -15,7 +15,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js?$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [{
           loader: 'babel-loader',
@@ -25,13 +25,17 @@ module.exports = {
               // @see https://github.com/babel/babel/issues/9849
               ['@babel/transform-runtime']
             ]
-          }
-        }]
+          },
+        },
+          {
+            loader: "ts-loader",
+          },
+        ]
       },
     ],
   },
   resolve: {
-    extensions: ['.js'],
+    extensions: [".tsx", ".ts", ".js"],
     modules: ['node_modules'],
     // @see https://stackoverflow.com/questions/59487224/webpack-throws-error-with-emscripten-cant-resolve-fs
     fallback: {
