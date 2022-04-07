@@ -14,27 +14,7 @@
         videoWidth = 640;
         videoHeight = 480;
         var webarkit = new WebARKit.WebARKit();
-        webarkit.init()
-            .then((w) => {
-                console.log(w);
-                var version = w.getARToolKitVersion();
-                var arCameraURL
-                console.log(version); // this should print the ARToolKit version
-                w.initialiseAR() // this should print: webarkit_ES6_wasm.js:8 [info] webarkit v5.4.0 initialised.
-                // loading the camera
-                async function start() {
-                    try {
-                        var arCameraURL = await w.loadCameraParam('./Data/camera_para.dat')
-                        .then(url => {
-                            var success = w.arwStartRunningJS(url, videoWidth, videoHeight)
-                            console.log(success);
-                        })
-                    } catch (e) {
-                        throw new Error('Error loading camera param: ' + e)
-                    }
-                };
-                start()
-                })
+        webarkit.startAR('./Data/camera_para.dat', videoWidth, videoHeight)
         
     </script>
 </body>
