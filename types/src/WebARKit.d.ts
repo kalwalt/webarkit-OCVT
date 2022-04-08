@@ -14,21 +14,38 @@ export interface WebARKitPipeline {
     initialized: (cameraMatrix: number[]) => void;
     tracking: (world: any, trackableId: number) => void;
     trackingLost: () => void;
-    process: () => void;
+    process: () => HTMLVideoElement;
 }
 export default class WebARKit {
     instance: any;
+    webarkit: any;
     private pipeline;
     private cameraCount;
+    private cameraParam;
+    private cameraParaFileURL;
+    private _projectionMatPtr;
+    private cameraId;
+    private cameraLoaded;
+    private listeners;
     private version;
+    videoWidth: number;
+    videoHeight: number;
     private _transMatPtr;
     constructor(pipeline: WebARKitPipeline);
-    startAR: (url: string, videoWidth: number, videoHeight: number) => Promise<void>;
+    setCameraURL: (url: string) => this;
+    setVideoSize: (videoWidth: number, videoHeight: number) => this;
+    static init(pipeline: WebARKitPipeline): Promise<WebARKit>;
+    private _initialize;
+    start(): Promise<void>;
     dispose(): void;
-    private _init;
     private _decorate;
     private _converter;
-    process: () => void;
+    process: () => Promise<void>;
     loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
     private _storeDataFile;
+    dispatchEvent(event: {
+        name: string;
+        target: any;
+        data?: object;
+    }): void;
 }
