@@ -11,10 +11,21 @@
 <body>
     <script src="../dist/WebARKit.js"></script>
     <script>
+ 
         videoWidth = 640;
         videoHeight = 480;
-        var webarkit = new WebARKit.WebARKit();
+        class Pipeline {
+            constructor(){}
+            process() {
+                console.log('processing')
+            }
+        }
+        var pipeline = new Pipeline()
+        console.log(WebARKit);
+        var webarkit = new WebARKit.WebARKit(pipeline);
+
         webarkit.startAR('./Data/camera_para.dat', videoWidth, videoHeight)
+        webarkit.process()
         
     </script>
 </body>

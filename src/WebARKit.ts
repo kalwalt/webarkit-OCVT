@@ -25,6 +25,7 @@ export default class WebARKit {
   private pipeline: WebARKitPipeline;
   private cameraCount: number;
   private version: string;
+  private _transMatPtr: number;
 
   // construction
   constructor (pipeline: WebARKitPipeline) {
@@ -36,14 +37,23 @@ export default class WebARKit {
   }
   // ---------------------------------------------------------------------------
   public startAR = async(url: string, videoWidth: number, videoHeight: number) => {
-    this.init()
+    this._init()
     .then(async(w) => {
       w.instance.initialiseAR();
       try {
-        var arCameraURL = await this.loadCameraParam(url)
+       await this.loadCameraParam(url)
         .then(url => {
             var success = w.instance.arwStartRunningJS(url, videoWidth, videoHeight)
             console.log(success);
+            if (success >= 0) {
+              console.info(' webarkit-ts started')
+              success = w.instance.pushVideoInit(0, videoWidth, videoHeight, 'RGBA', 0, 0)
+              if (success < 0) {
+                throw new Error('Error while starting')
+              }
+          } else {
+            throw new Error('Error while starting')
+          }
         })
     } catch (e) {
         throw new Error('Error loading camera param: ' + e)
@@ -55,8 +65,23 @@ export default class WebARKit {
     // TODO: camera opening process
   }
 
+  /**
+        Destroys the WebARKit instance and frees all associated resources.
+        After calling dispose, the WebARKit can't be used any longer. Make a new one if you need one.
+
+        Calling this avoids leaking Emscripten memory.
+    */
+  public dispose() {
+    this.instance._free(this._transMatPtr)
+    this.instance.stopRunning()
+    this.instance.shutdownAR()
+    for (var t in this) {
+      this[t] = null
+    }
+  };
+
   // initialization
-  private init = async () => {
+  private _init = async () => {
 
     this.instance = await webarkit()
     this._decorate()
@@ -136,18 +161,22 @@ export default class WebARKit {
       '_malloc',
       'FS'
     ].forEach(method => {
-      this.converter()[method] = this.instance[method];
+      this._converter()[method] = this.instance[method];
     })
     // expose constants
     for (const co in this.instance) {
       if (co.match(/^WebAR/)) {
-        this.converter()[co] = this.instance[co];
+        this._converter()[co] = this.instance[co];
       }
     }
   }
 
-  private converter = (): any => {
+  private _converter = (): any => {
     return this;
+  }
+
+  public process = () => {
+    this.pipeline.process();
   }
 
   public loadCameraParam = async(urlOrData: any): Promise<string|Uint8Array> => {
