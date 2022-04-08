@@ -21,12 +21,18 @@
             }
         }
         var pipeline = new Pipeline()
-        console.log(WebARKit);
-        var webarkit = new WebARKit.WebARKit(pipeline);
-
-        webarkit.startAR('./Data/camera_para.dat', videoWidth, videoHeight)
-        webarkit.process()
-        
+        WebARKit.WebARKit.init(pipeline)
+        .then((w) => {
+           w.setCameraURL('./Data/camera_para.dat');
+           w.setVideoSize(videoWidth, videoHeight);
+           try{
+               w.start()
+           }catch (e){
+               console.error(e);
+           }
+           w.process()
+        });
+   
     </script>
 </body>
 
