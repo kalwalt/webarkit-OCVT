@@ -21,11 +21,14 @@ export default class WebARKit {
     private pipeline;
     private cameraCount;
     private version;
+    private _transMatPtr;
     constructor(pipeline: WebARKitPipeline);
     startAR: (url: string, videoWidth: number, videoHeight: number) => Promise<void>;
-    private init;
+    dispose(): void;
+    private _init;
     private _decorate;
-    private converter;
+    private _converter;
+    process: () => void;
     loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
     private _storeDataFile;
 }
