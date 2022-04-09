@@ -11,16 +11,48 @@ declare global {
   }
 }
 
+interface ImageObj {
+  videoWidth: number,
+  width: number,
+  videoHeight: number,
+  height: number,
+  data: Uint8ClampedArray,
+}
+
+interface ITrackable {
+  trackableId: number;
+  transformation: Float32Array;
+  arCameraViewRH?: Float32Array;
+  visible?: boolean;
+  scale?: number;
+}
+
+interface ITrackableObj {
+  width: number;
+  height: number;
+  trackableType: string;
+  barcodeId: number;
+  url: string;
+}
+
+interface IPatternDetectionObj {
+  barcode: boolean,
+  template: boolean,
+}
+
 export interface WebARKitPipeline {
   trackableLoaded?: (trackableId: number) => void;
   trackablesLoaded?: (trackableIds: number[]) => void;
   initialized: (cameraMatrix: number[]) => void;
   tracking: (world: any, trackableId: number) => void;
   trackingLost: () => void;
-  process: () => HTMLVideoElement;
+  process: () => Promise<ImageObj>;
 }
 
 export default class WebARKit {
+  private id: number;
+  private width: number;
+  private height: number;
   public instance: any;
   public webarkit: any;
   private pipeline: WebARKitPipeline;
@@ -30,23 +62,38 @@ export default class WebARKit {
   private _projectionMatPtr: number;
   private cameraId: number;
   private cameraLoaded: boolean;
+  private framepointer: number;
+  private framesize: number;
+  private dataHeap: Uint8Array;
+  private image: any;
   private listeners: object;
+  private _marker_count: number;
+  private trackables: Array<ITrackable>;
   private version: string;
   public videoWidth: number;
   public videoHeight: number;
+  public videoSize: number;
+  private videoLuma: Uint8ClampedArray;
   private _transMatPtr: number;
 
   // construction
   constructor (pipeline: WebARKitPipeline) {
     // reference to WASM module
+    this.id = -1
+    this._marker_count = 0
     this.instance
     this.cameraParaFileURL;
     this.cameraId = -1
     this.cameraLoaded = false;
+    this.framesize;
+    this.image;
     this.listeners = {};
     this.pipeline = pipeline;
+    this.trackables = [];
     this.videoWidth;
     this.videoHeight;
+    this.videoSize = this.videoWidth * this.videoHeight
+    this.videoLuma;
     this.version = '1.0.0'
     console.info('WebARKit ', this.version)
   }
@@ -213,8 +260,12 @@ export default class WebARKit {
     return this;
   }
 
-  public process = async() => {
-    let video: HTMLVideoElement = this.pipeline.process();
+  public process = async(image: ImageObj) => {
+    if (!image) { image = this.image }
+    /*let video: ImageObj = this.pipeline.process();
+    console.log(video);
+    this.pipeline.process()
+    .then( data =>{})*/
     
     if (!this.webarkit.isInitialized()) {
       try {
@@ -222,11 +273,122 @@ export default class WebARKit {
       } catch (e) {
         console.error('Unable to start running')
       }
-      //this._processImage(video)
+      this._processImage(image)
     } else {
-      //this._processImage(video)
+      this._processImage(image)
     }
   }
+
+  public _processImage(image: ImageObj) {
+    try {
+      this._prepareImage(image)
+      const success = this.webarkit._arwUpdateAR()
+      if (success >= 0) {
+        this.trackables.forEach((trackable) => {      
+          const transformation = this._queryTrackableVisibility(trackable.trackableId)   
+          if (transformation) {
+            trackable.transformation = transformation
+            trackable.arCameraViewRH = this.arglCameraViewRHf(transformation)
+            trackable.visible = true
+            trackable.scale = this.height / this.width
+            try {
+              this.dispatchEvent({
+                name: 'getMarker',
+                target: this,
+                data: trackable
+              })
+            } catch (e) {
+              console.error('Error during trackable found event processing ' + e)
+            }
+          } else {
+            trackable.visible = false
+          }
+        }, this)
+      }
+    } catch (e) {
+      console.error('Unable to detect marker: ' + e)
+    }
+  }
+
+  /**
+  * Sets imageData and videoLuma as properties to ARControllerX object to be used for marker detection.
+  * Copies the video image and luma buffer into the HEAP to be available for the compiled C code for marker detection.
+  * Sets newFrame and fillFlag in the compiled C code to signal the marker detection that a new frame is available.
+  *
+  * @param {HTMLImageElement|HTMLVideoElement} [image] The image to prepare for marker detection
+  * @returns {boolean} true if successfull
+  * @private
+  */
+   private _prepareImage (sourceImage: ImageObj) {
+    if (!sourceImage) {
+    // default to preloaded image
+      sourceImage = this.image
+    }  
+
+    // this is of type Uint8ClampedArray:
+    // The Uint8ClampedArray typed array represents an array of 8-bit unsigned
+    // integers clamped to 0-255
+    // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray
+    let data: Uint8ClampedArray;
+
+    if (sourceImage.data) {
+      // directly use source image
+      data = sourceImage.data
+    }
+
+    this.videoLuma = new Uint8ClampedArray(data.length / 4)
+    // Here we have access to the unmodified video image. We now need to add the videoLuma chanel to be able to serve the underlying ARTK API
+    if (this.videoLuma) {
+      
+      let q = 0
+
+      // Create luma from video data assuming Pixelformat AR_PIXEL_FORMAT_RGBA
+      // see (ARToolKitJS.cpp L: 43)
+      for (let p = 0; p < this.videoSize; p++) {      
+        let r = data[q + 0], g = data[q + 1], b = data[q + 2];
+        // @see https://stackoverflow.com/a/596241/5843642    
+        this.videoLuma[p] = (r + r + r + b + g + g + g + g) >> 3
+        q += 4
+      }
+    }
+
+     // Get access to the video allocation object
+     //const videoMalloc = this.artoolkitX.videoMalloc
+     const params = this.webarkit.instance.videoMalloc;
+     
+     // Copy luma image
+     const videoFrameLumaBytes = new Uint8Array(this.webarkit.instance.HEAPU8.buffer, params.lumaFramePointer, params.framesize / 4)
+     videoFrameLumaBytes.set(this.videoLuma)
+     //this.videoLuma = videoLuma
+ 
+     // Copy image data into HEAP. HEAP was prepared during videoWeb.c::ar2VideoPushInitWeb()
+     const videoFrameBytes = new Uint8Array(this.webarkit.instance.HEAPU8.buffer, params.framepointer, params.framesize)
+     videoFrameBytes.set(data)
+     this.framesize = params.framesize
+ 
+     this.webarkit.instance.setValue(params.newFrameBoolPtr, 1, 'i8')
+     this.webarkit.instance.setValue(params.fillFlagIntPtr, 1, 'i32')
+ 
+     // Provide a timestamp to each frame because arvideo2.arUtilTimeSinceEpoch() seems not to perform well with Emscripten.
+     // It internally calls gettimeofday which should not be used with Emscripten according to this: https://github.com/urho3d/Urho3D/issues/916
+     // which says that emscripten_get_now() should be used. However, this seems to have issues too https://github.com/kripken/emscripten/issues/5893
+     // Basically because it relies on performance.now() and performance.now() is supposedly slower then Date.now() but offers greater accuracy.
+     // Or rather should offer but does not anymore because of Spectre (https://en.wikipedia.org/wiki/Spectre_(security_vulnerability))
+     // Bottom line as performance.now() is slower then Date.now() (https://jsperf.com/gettime-vs-now-0/7) and doesn't offer higher accuracy and we
+     // would be calling it for each video frame I decided to read the time per frame from JS and pass it in to the compiled C-Code using a pointer.
+     const time = Date.now()
+     const seconds = Math.floor(time / 1000)
+     const milliSeconds = time - seconds * 1000
+     this.webarkit.instance.setValue(params.timeSecPtr, seconds, 'i32')
+     this.webarkit.instance.setValue(params.timeMilliSecPtr, milliSeconds, 'i32')
+
+     const ret = this.webarkit._arwCapture()
+ 
+     /*if (this.debug) {
+       this.debugDraw()
+     }*/
+     return ret
+  };
 
   public loadCameraParam = async(urlOrData: any): Promise<string|Uint8Array> => {
     return new Promise((resolve, reject) => {
@@ -279,6 +441,41 @@ export default class WebARKit {
     })
   }
 
+  // event handling
+  //----------------------------------------------------------------------------
+
+  /**
+   * Add an event listener on this ARControllerNFT for the named event, calling the callback function
+   * whenever that event is dispatched.
+   * Possible events are:
+   * - getMarker - dispatched whenever process() finds a square marker
+   * - getMultiMarker - dispatched whenever process() finds a visible registered multimarker
+   * - getMultiMarkerSub - dispatched by process() for each marker in a visible multimarker
+   * - load - dispatched when the ARControllerNFT is ready to use (useful if passing in a camera URL in the constructor)
+   * @param {string} name Name of the event to listen to.
+   * @param {function} callback Callback function to call when an event with the given name is dispatched.
+   */
+   public addEventListener(name: string, callback: object) {
+    if (!this._converter().listeners[name]) {
+      this._converter().listeners[name] = [];
+    }
+    this._converter().listeners[name].push(callback);
+  };
+
+  /**
+   * Remove an event listener from the named event.
+   * @param {string} name Name of the event to stop listening to.
+   * @param {function} callback Callback function to remove from the listeners of the named event.
+   */
+  public removeEventListener(name: string, callback: object) {
+    if (this._converter().listeners[name]) {
+      let index = this._converter().listeners[name].indexOf(callback);
+      if (index > -1) {
+        this._converter().listeners[name].splice(index, 1);
+      }
+    }
+  };
+
   /**
    * Dispatches the given event to all registered listeners on event.name.
    * @param {Object} event Event to dispatch.
@@ -291,6 +488,68 @@ export default class WebARKit {
       }
     }
   };
+
+  /**
+   * Converts the given 4x4 openGL matrix in the 16-element transMat array
+   * into a 4x4 OpenGL Right-Hand-View matrix and writes the result into the 16-element glMat array.
+   * If scale parameter is given, scales the transform of the glMat by the scale parameter.
+   * @param {Float32Array} glMatrix The 4x4 marker transformation matrix.
+   * @param {Float32Array} [glRhMatrix] The 4x4 GL right hand transformation matrix.
+   * @param {number} [scale] The scale for the transform.
+   */
+   public arglCameraViewRHf(glMatrix: Float32Array, glRhMatrix?: Float32Array, scale?: number) {
+    let m_modelview
+    if (glRhMatrix == undefined) { m_modelview = new Float32Array(16) } else { m_modelview = glRhMatrix }
+
+    // x
+    m_modelview[0] = glMatrix[0]
+    m_modelview[4] = glMatrix[4]
+    m_modelview[8] = glMatrix[8]
+    m_modelview[12] = glMatrix[12]
+    // y
+    m_modelview[1] = -glMatrix[1]
+    m_modelview[5] = -glMatrix[5]
+    m_modelview[9] = -glMatrix[9]
+    m_modelview[13] = -glMatrix[13]
+    // z
+    m_modelview[2] = -glMatrix[2]
+    m_modelview[6] = -glMatrix[6]
+    m_modelview[10] = -glMatrix[10]
+    m_modelview[14] = -glMatrix[14]
+
+    // 0 0 0 1
+    m_modelview[3] = 0
+    m_modelview[7] = 0
+    m_modelview[11] = 0
+    m_modelview[15] = 1
+
+    if (scale != undefined && scale !== 0.0) {
+      m_modelview[12] *= scale
+      m_modelview[13] *= scale
+      m_modelview[14] *= scale
+    }
+
+    glRhMatrix = m_modelview
+
+    return glRhMatrix
+  }
+
+
+  // Internal wrapper to _arwQueryTrackableVisibilityAndTransformation to avoid ccall overhead
+  private _queryTrackableVisibility (trackableId: number) {
+    const transformationMatrixElements = 16
+    const numBytes = transformationMatrixElements * Float32Array.BYTES_PER_ELEMENT
+    this._transMatPtr = this.webarkit._malloc(numBytes)
+    // Call compiled C-function directly using '_' notation
+    // https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#interacting-with-code-direct-function-calls
+    const transformation = this.webarkit._arwQueryTrackableVisibilityAndTransformation(trackableId, this._transMatPtr)
+    const matrix = new Float32Array(this.webarkit.instance.HEAPU8.buffer, this._transMatPtr, transformationMatrixElements)
+    if (transformation) {
+      return matrix
+    }
+    return undefined
+  }
+
 
 
 }
