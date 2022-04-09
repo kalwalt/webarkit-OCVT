@@ -1,4 +1,41 @@
+/*
+ *  WebARKit.ts
+ *  WebARKit
+ *
+ *  This file is part of WebARKit.
+ *
+ *  WebARKit is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  WebARKit is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with WebARKit.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  As a special exception, the copyright holders of this library give you
+ *  permission to link this library with independent modules to produce an
+ *  executable, regardless of the license terms of these independent modules, and to
+ *  copy and distribute the resulting executable under terms of your choice,
+ *  provided that you also meet, for each linked independent module, the terms and
+ *  conditions of the license of that module. An independent module is a module
+ *  which is neither derived from nor based on this library. If you modify this
+ *  library, you may extend this exception to your version of the library, but you
+ *  are not obligated to do so. If you do not wish to do so, delete this exception
+ *  statement from your version.
+ *
+ *  Copyright 2022 WebARKit.
+ *
+ *  Author(s): Walter Perdan @kalwalt https://github.com/kalwalt
+ *
+ */
+
 import webarkit from '../build/webarkit_ES6_wasm'
+import WebARKitLoader from './loaders/WebARKitLoader'
 
 declare global {
   namespace NodeJS {
@@ -62,12 +99,18 @@ export default class WebARKit {
   private _projectionMatPtr: number;
   private cameraId: number;
   private cameraLoaded: boolean;
+  private camera_mat: Float32Array;
+  private defaultMarkerWidth: number;
+  private default2dHeight: number;
   private framepointer: number;
   private framesize: number;
   private dataHeap: Uint8Array;
+  private has2DTrackable: boolean;
   private image: any;
   private listeners: object;
   private _marker_count: number;
+  private _patternDetection: IPatternDetectionObj;
+  private userSetPatternDetection: boolean;
   private trackables: Array<ITrackable>;
   private version: string;
   public videoWidth: number;
@@ -85,9 +128,15 @@ export default class WebARKit {
     this.cameraParaFileURL;
     this.cameraId = -1
     this.cameraLoaded = false;
+    this.camera_mat = null
     this.framesize;
     this.image;
+    this.has2DTrackable;
     this.listeners = {};
+    this._patternDetection = {
+      barcode: false,
+      template: false,
+    }
     this.pipeline = pipeline;
     this.trackables = [];
     this.videoWidth;
@@ -260,6 +309,55 @@ export default class WebARKit {
     return this;
   }
 
+  /**
+       Set the pattern detection mode
+
+       The pattern detection determines the method by which ARToolKitX
+       matches detected squares in the video image to marker templates
+       and/or IDs. ARToolKitX v4.x can match against pictorial "template" markers,
+       whose pattern files are created with the mk_patt utility, in either colour
+       or mono, and additionally can match against 2D-barcode-type "matrix"
+       markers, which have an embedded marker ID. Two different two-pass modes
+       are also available, in which a matrix-detection pass is made first,
+       followed by a template-matching pass.
+
+       @param {number} mode
+           Options for this field are:
+           artoolkitX.AR_TEMPLATE_MATCHING_COLOR
+           artoolkitX.AR_TEMPLATE_MATCHING_MONO
+           artoolkitX.AR_MATRIX_CODE_DETECTION
+           artoolkitX.AR_TEMPLATE_MATCHING_COLOR_AND_MATRIX
+           artoolkitX.AR_TEMPLATE_MATCHING_MONO_AND_MATRIX
+           The default mode is AR_TEMPLATE_MATCHING_COLOR.
+   */
+           public setPatternDetectionMode(mode: number) {
+            this.userSetPatternDetection = true
+            return this._setPatternDetectionMode(mode)
+          };
+
+  /**
+   * For ease of use check what kinds of markers have been added and set the detection mode accordingly
+   */
+   private _updateDetectionMode() {
+    if (this._patternDetection.barcode && this._patternDetection.template) {
+      this.setPatternDetectionMode(this.webarkit.AR_TEMPLATE_MATCHING_COLOR_AND_MATRIX)
+    } else if (this._patternDetection.barcode) {
+      this.setPatternDetectionMode(this.webarkit.AR_MATRIX_CODE_DETECTION)
+    } else {
+      this.setPatternDetectionMode(this.webarkit.AR_TEMPLATE_MATCHING_COLOR)
+    }
+  }
+
+  /**
+    * Private function to set the pattenr detection mode.
+    * It is implemented like this to have the posibility to let the user set the pattern detection mode
+    * by still providing the automatism to allow to set the pattern detection mode depending on the registered trackables (see {@link #addTrackable}).
+    * @param {*} mode see {@link #setPatternDetectionMode}
+    */
+   private _setPatternDetectionMode(mode: number) {
+    return this.webarkit.setTrackerOptionInt(this.webarkit.TrackableOptions.ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE.value, mode)
+  }
+
   public process = async(image: ImageObj) => {
     if (!image) { image = this.image }
     /*let video: ImageObj = this.pipeline.process();
@@ -271,11 +369,11 @@ export default class WebARKit {
       try {
         await this.start()
       } catch (e) {
-        console.error('Unable to start running')
+        console.error('Unable to start running', e);
       }
-      this._processImage(image)
+      this._processImage(image);
     } else {
-      this._processImage(image)
+      this._processImage(image);
     }
   }
 
@@ -311,7 +409,7 @@ export default class WebARKit {
   }
 
   /**
-  * Sets imageData and videoLuma as properties to ARControllerX object to be used for marker detection.
+  * Sets imageData and videoLuma as properties to WebARKit object to be used for marker detection.
   * Copies the video image and luma buffer into the HEAP to be available for the compiled C code for marker detection.
   * Sets newFrame and fillFlag in the compiled C code to signal the marker detection that a new frame is available.
   *
@@ -353,21 +451,21 @@ export default class WebARKit {
     }
 
      // Get access to the video allocation object
-     //const videoMalloc = this.artoolkitX.videoMalloc
-     const params = this.webarkit.instance.videoMalloc;
+     //const videoMalloc = this.webarkit.videoMalloc
+     const params = this.webarkit.videoMalloc;
      
      // Copy luma image
-     const videoFrameLumaBytes = new Uint8Array(this.webarkit.instance.HEAPU8.buffer, params.lumaFramePointer, params.framesize / 4)
+     const videoFrameLumaBytes = new Uint8Array(this.webarkit.HEAPU8.buffer, params.lumaFramePointer, params.framesize / 4)
      videoFrameLumaBytes.set(this.videoLuma)
      //this.videoLuma = videoLuma
  
      // Copy image data into HEAP. HEAP was prepared during videoWeb.c::ar2VideoPushInitWeb()
-     const videoFrameBytes = new Uint8Array(this.webarkit.instance.HEAPU8.buffer, params.framepointer, params.framesize)
+     const videoFrameBytes = new Uint8Array(this.webarkit.HEAPU8.buffer, params.framepointer, params.framesize)
      videoFrameBytes.set(data)
      this.framesize = params.framesize
  
-     this.webarkit.instance.setValue(params.newFrameBoolPtr, 1, 'i8')
-     this.webarkit.instance.setValue(params.fillFlagIntPtr, 1, 'i32')
+     this.webarkit.setValue(params.newFrameBoolPtr, 1, 'i8')
+     this.webarkit.setValue(params.fillFlagIntPtr, 1, 'i32')
  
      // Provide a timestamp to each frame because arvideo2.arUtilTimeSinceEpoch() seems not to perform well with Emscripten.
      // It internally calls gettimeofday which should not be used with Emscripten according to this: https://github.com/urho3d/Urho3D/issues/916
@@ -379,8 +477,8 @@ export default class WebARKit {
      const time = Date.now()
      const seconds = Math.floor(time / 1000)
      const milliSeconds = time - seconds * 1000
-     this.webarkit.instance.setValue(params.timeSecPtr, seconds, 'i32')
-     this.webarkit.instance.setValue(params.timeMilliSecPtr, milliSeconds, 'i32')
+     this.webarkit.setValue(params.timeSecPtr, seconds, 'i32')
+     this.webarkit.setValue(params.timeMilliSecPtr, milliSeconds, 'i32')
 
      const ret = this.webarkit._arwCapture()
  
@@ -389,6 +487,26 @@ export default class WebARKit {
      }*/
      return ret
   };
+
+/**
+  * Returns the projection matrix computed from camera parameters for WebARKit.
+  * @param nearPlane {number} the near plane value of the camera.
+  * @param farPlane {number} the far plane value of the camera.
+  * @return {Float32Array} The 16-element WebGL camera matrix for WebARKit camera parameters.
+  */
+ public getCameraProjMatrix(nearPlane = 0.1, farPlane = 1000) {
+  const cameraMatrixElements = 16
+  const numBytes: number = cameraMatrixElements * Float32Array.BYTES_PER_ELEMENT
+  this._projectionMatPtr = this.webarkit._malloc(numBytes)
+  // Call compiled C-function directly using '_' notation
+  // https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#interacting-with-code-direct-function-calls
+  const cameraMatrix = this.webarkit._arwGetProjectionMatrix(nearPlane, farPlane, this._projectionMatPtr)
+  this.camera_mat = new Float32Array(this.webarkit.HEAPU8.buffer, this._projectionMatPtr, cameraMatrixElements)
+  if (cameraMatrix) {
+    return this.camera_mat
+  }
+  return undefined
+}
 
   public loadCameraParam = async(urlOrData: any): Promise<string|Uint8Array> => {
     return new Promise((resolve, reject) => {
@@ -426,32 +544,69 @@ export default class WebARKit {
     })
   }
 
-  // ---------------------------------------------------------------------------
-
-  // implementation
   /**
-   * Used internally by LoadCamera method
-   * @return {void}
-   */
-   private _storeDataFile = (data: Uint8Array, target: string) => {
-    // FS is provided by emscripten
-    // Note: valid data must be in binary format encoded as Uint8Array
-    this.webarkit.FS.writeFile(target, data, {
-      encoding: 'binary'
-    })
+     * Loads a trackable into the artoolkitX contect by calling addTrackable on the artoolkitX native interface
+     *
+     * @param {object} trackableObj -
+     *              {
+     *                  trackableType:  {string} 'single_barcode' / 'multi' / 'single' / '2d'
+     *                  url: {string} '<URL to the trackable file in case of multi, single or 2d>'
+     *                  barcodeId: {number}
+     *                  width: {number} defaults to this.markerWidth if not set
+     *                  height: {number} if 2D trackable reflects height of trackable. If not set defaults to default2dHeight
+     *              }
+     * @returns {Promise} which resolves into a {number} trackable id if successfull or thorws an error
+     */
+   public async addTrackables(trackableObj: ITrackableObj) {
+    if (!trackableObj.width) { trackableObj.width = this.defaultMarkerWidth }
+    if (!trackableObj.height) trackableObj.height = this.default2dHeight
+    let fileName, trackableId
+    if (trackableObj.trackableType.includes('single') || trackableObj.trackableType.includes('2d')) {
+      if (trackableObj.barcodeId !== undefined) {
+        fileName = trackableObj.barcodeId
+        console.log('filename inside barcodeId query', fileName);       
+        if (!this._patternDetection.barcode) {
+          this._patternDetection.barcode = true
+        }
+      } else {
+        try {   
+          fileName = await this._loadTrackable(trackableObj.url)
+        } catch (error) {
+          throw new Error('Error to load trackable: ' + error)
+        }
+        if (!this._patternDetection.template) {
+          this._patternDetection.template = true
+        }
+      }
+      if (trackableObj.trackableType.includes('2d')) {
+        this.has2DTrackable = true
+        trackableId = this.webarkit.addTrackable(trackableObj.trackableType + ';' + fileName + ';' + trackableObj.height)
+        console.log('2d id: ', trackableId);    
+      } else {
+        trackableId = this.webarkit.addTrackable(trackableObj.trackableType + ';' + fileName + ';' + trackableObj.width)
+        console.log('other id: ', trackableId);
+      }
+    }
+
+    if (trackableId >= 0) {
+      this.trackables.push({ trackableId: trackableId, transformation: (new Float32Array(16)), visible: false })
+      if (!this.userSetPatternDetection) { this._updateDetectionMode() }
+      return trackableId
+    }
+    throw new Error('Failed to add Trackable: ' + trackableId)
   }
 
   // event handling
   //----------------------------------------------------------------------------
 
   /**
-   * Add an event listener on this ARControllerNFT for the named event, calling the callback function
+   * Add an event listener on this WebARKit for the named event, calling the callback function
    * whenever that event is dispatched.
    * Possible events are:
    * - getMarker - dispatched whenever process() finds a square marker
    * - getMultiMarker - dispatched whenever process() finds a visible registered multimarker
    * - getMultiMarkerSub - dispatched by process() for each marker in a visible multimarker
-   * - load - dispatched when the ARControllerNFT is ready to use (useful if passing in a camera URL in the constructor)
+   * - load - dispatched when the WebARKit is ready to use (useful if passing in a camera URL in the constructor)
    * @param {string} name Name of the event to listen to.
    * @param {function} callback Callback function to call when an event with the given name is dispatched.
    */
@@ -534,6 +689,37 @@ export default class WebARKit {
     return glRhMatrix
   }
 
+/**
+   * Used internally by the addTrackable method.
+   * @param url of the file to load.
+   * @returns the target.
+   */
+ private async _loadTrackable(url: string) {
+  var target = "/trackable_" + this._marker_count++;
+  try {
+    let data = await WebARKitLoader.fetchRemoteData(url);
+    this._storeDataFile(data,target);
+    return target;
+  } catch (e) {
+    console.log(e);
+    return e;
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+  // implementation
+  /**
+   * Used internally by LoadCamera and _loadTrackable
+   * @return {void}
+   */
+   private _storeDataFile = (data: Uint8Array, target: string) => {
+    // FS is provided by emscripten
+    // Note: valid data must be in binary format encoded as Uint8Array
+    this.webarkit.FS.writeFile(target, data, {
+      encoding: 'binary'
+    })
+  }
 
   // Internal wrapper to _arwQueryTrackableVisibilityAndTransformation to avoid ccall overhead
   private _queryTrackableVisibility (trackableId: number) {
@@ -543,7 +729,7 @@ export default class WebARKit {
     // Call compiled C-function directly using '_' notation
     // https://kripken.github.io/emscripten-site/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html#interacting-with-code-direct-function-calls
     const transformation = this.webarkit._arwQueryTrackableVisibilityAndTransformation(trackableId, this._transMatPtr)
-    const matrix = new Float32Array(this.webarkit.instance.HEAPU8.buffer, this._transMatPtr, transformationMatrixElements)
+    const matrix = new Float32Array(this.webarkit.HEAPU8.buffer, this._transMatPtr, transformationMatrixElements)
     if (transformation) {
       return matrix
     }

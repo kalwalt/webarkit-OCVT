@@ -15,6 +15,13 @@ interface ImageObj {
     height: number;
     data: Uint8ClampedArray;
 }
+interface ITrackableObj {
+    width: number;
+    height: number;
+    trackableType: string;
+    barcodeId: number;
+    url: string;
+}
 export interface WebARKitPipeline {
     trackableLoaded?: (trackableId: number) => void;
     trackablesLoaded?: (trackableIds: number[]) => void;
@@ -36,12 +43,18 @@ export default class WebARKit {
     private _projectionMatPtr;
     private cameraId;
     private cameraLoaded;
+    private camera_mat;
+    private defaultMarkerWidth;
+    private default2dHeight;
     private framepointer;
     private framesize;
     private dataHeap;
+    private has2DTrackable;
     private image;
     private listeners;
     private _marker_count;
+    private _patternDetection;
+    private userSetPatternDetection;
     private trackables;
     private version;
     videoWidth: number;
@@ -58,11 +71,15 @@ export default class WebARKit {
     dispose(): void;
     private _decorate;
     private _converter;
+    setPatternDetectionMode(mode: number): any;
+    private _updateDetectionMode;
+    private _setPatternDetectionMode;
     process: (image: ImageObj) => Promise<void>;
     _processImage(image: ImageObj): void;
     private _prepareImage;
+    getCameraProjMatrix(nearPlane?: number, farPlane?: number): Float32Array;
     loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
-    private _storeDataFile;
+    addTrackables(trackableObj: ITrackableObj): Promise<any>;
     addEventListener(name: string, callback: object): void;
     removeEventListener(name: string, callback: object): void;
     dispatchEvent(event: {
@@ -71,6 +88,8 @@ export default class WebARKit {
         data?: object;
     }): void;
     arglCameraViewRHf(glMatrix: Float32Array, glRhMatrix?: Float32Array, scale?: number): Float32Array;
+    private _loadTrackable;
+    private _storeDataFile;
     private _queryTrackableVisibility;
 }
 export {};

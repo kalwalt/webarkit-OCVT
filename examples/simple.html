@@ -13,22 +13,65 @@
     <script src="../dist/WebARKit.js"></script>
     <script src="Pipeline.js"></script>
     <script>
- 
+        var trackable = {
+            trackableType: 'single_barcode',
+            barcodeId: 4
+        }
+        /*var trackable = {
+            trackableType: "2d",
+            url: './Data/pinball.jpg',
+            //width: 1.0
+        }*/
+
         videoWidth = 640;
         videoHeight = 480;
         var pipeline = new Pipeline(videoWidth, videoHeight)
         WebARKit.WebARKit.init(pipeline)
-        .then((w) => {
-           w.setCameraURL('./Data/camera_para.dat');
-           w.setVideoSize(videoWidth, videoHeight);
-           try{
-               w.start()
-           }catch (e){
-               console.error(e);
-           }
-           //w.process()
-        });
-   
+            .then((w) => {
+                w.setCameraURL('./Data/camera_para.dat');
+                w.setVideoSize(videoWidth, videoHeight);
+                try {
+                    w.start()
+                        .then(_ => {
+
+                            let cmtx = w.getCameraProjMatrix();
+                            console.log(cmtx);
+                            //var trackableId = w.addTrackable(trackable);
+                            //w.process()
+                        })
+                    w.addTrackables(trackable);
+                } catch (e) {
+                    console.error(e);
+                }
+                w.process()
+            });
+
+        async function initCamera() {
+
+            const constraints = {
+                audio: false,
+                video: {
+                    // using the "environment" rear camera
+                    facingMode: "environment",
+                    // using the "user" front camera
+                    // facingMode: "user",
+                    width: width,
+                    height: height
+                }
+            };
+
+            // initialize video source
+            const video = document.querySelector("#video");
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+
+            return new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    resolve(video);
+                };
+            });
+        };
+
     </script>
 </body>
 
