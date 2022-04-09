@@ -1,5 +1,5 @@
 /*
- *  index.ts
+ *  WebARKitLoader.ts
  *  WebARKit
  *
  *  This file is part of WebARKit.
@@ -33,9 +33,37 @@
  *  Author(s): Walter Perdan @kalwalt https://github.com/kalwalt
  *
  */
+import axios from 'axios'
 
-import WebARKit from './WebARKit'
+export default class WebARKitLoader {
+  static async fetchRemoteData (url: string) {
+    try {
+      const response: any = await axios.get(url, { responseType: 'arraybuffer' })
+      return new Uint8Array(response.data)
+    } catch (error) {
+      throw error
+    }
+  }
 
-export default {
-  WebARKit
+  static async fetchRemoteDataCallback (url: string, callback: any) {
+    try {
+      const response: any = await axios.get(url, { responseType: 'arraybuffer' })
+      .then((response: any) => {
+        const data = new Uint8Array(response.data)
+        console.log(data);
+        callback(response)
+      })
+      return response
+    } catch (error) {
+      throw error
+    }
+  }
+
+  static string2Uint8Data (string: string) {
+    const data = new Uint8Array(string.length)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = string.charCodeAt(i) & 0xff
+    }
+    return data
+  }
 }
