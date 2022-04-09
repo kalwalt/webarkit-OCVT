@@ -9,18 +9,14 @@
 </head>
 
 <body>
+    <video loop autoplay muted playsinline id="video"></video>
     <script src="../dist/WebARKit.js"></script>
+    <script src="Pipeline.js"></script>
     <script>
  
         videoWidth = 640;
         videoHeight = 480;
-        class Pipeline {
-            constructor(){}
-            process() {
-                console.log('processing')
-            }
-        }
-        var pipeline = new Pipeline()
+        var pipeline = new Pipeline(videoWidth, videoHeight)
         WebARKit.WebARKit.init(pipeline)
         .then((w) => {
            w.setCameraURL('./Data/camera_para.dat');
@@ -30,7 +26,7 @@
            }catch (e){
                console.error(e);
            }
-           w.process()
+           //w.process()
         });
    
     </script>
