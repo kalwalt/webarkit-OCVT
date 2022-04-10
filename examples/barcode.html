@@ -89,7 +89,7 @@
           try {
             arController.start().then(() => {
               console.log("start done");
-              renderer.setSize(arController.width, arController.height);
+              renderer.setSize(videoWidth, videoHeight);
               document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
               const camMatrix = arController.getCameraProjMatrix(0.0001, 100000);
@@ -143,8 +143,7 @@
 
               scene.add(markerRoot);
 
-              var trackableId = arController.addTrackables(trackable);
-              console.log(trackableId);
+              arController.addTrackables(trackable);
               interval = setInterval(function () {
                 imageData = getImageData(video, width, height)
                 arController.process(imageData);
