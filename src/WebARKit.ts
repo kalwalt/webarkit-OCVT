@@ -105,6 +105,8 @@ export default class WebARKit {
   private framepointer: number;
   private framesize: number;
   private dataHeap: Uint8Array;
+  private videoLuma: Uint8ClampedArray;
+  private videoLumaPointer: number;
   private has2DTrackable: boolean;
   private image: any;
   private listeners: object;
@@ -112,12 +114,14 @@ export default class WebARKit {
   private _patternDetection: IPatternDetectionObj;
   private userSetPatternDetection: boolean;
   private trackables: Array<ITrackable>;
+  private transform_mat: Float64Array;
+  private _transMatPtr: number;
+  private marker_transform_mat: Float64Array;
+  private transformGL_RH: Float64Array;
   private version: string;
   public videoWidth: number;
   public videoHeight: number;
   public videoSize: number;
-  private videoLuma: Uint8ClampedArray;
-  private _transMatPtr: number;
 
   // construction
   constructor (pipeline: WebARKitPipeline) {
@@ -143,6 +147,8 @@ export default class WebARKit {
     this.videoHeight;
     this.videoSize = this.videoWidth * this.videoHeight
     this.videoLuma;
+    this.defaultMarkerWidth = 80
+    this.default2dHeight = 0.001
     this.version = '1.0.0'
     console.info('WebARKit ', this.version)
   }
@@ -383,7 +389,7 @@ export default class WebARKit {
       const success = this.webarkit._arwUpdateAR()
       if (success >= 0) {
         this.trackables.forEach((trackable) => {      
-          const transformation = this._queryTrackableVisibility(trackable.trackableId)   
+          const transformation = this._queryTrackableVisibility(trackable.trackableId)
           if (transformation) {
             trackable.transformation = transformation
             trackable.arCameraViewRH = this.arglCameraViewRHf(transformation)

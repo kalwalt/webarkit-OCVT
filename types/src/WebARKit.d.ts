@@ -49,6 +49,8 @@ export default class WebARKit {
     private framepointer;
     private framesize;
     private dataHeap;
+    private videoLuma;
+    private videoLumaPointer;
     private has2DTrackable;
     private image;
     private listeners;
@@ -56,12 +58,14 @@ export default class WebARKit {
     private _patternDetection;
     private userSetPatternDetection;
     private trackables;
+    private transform_mat;
+    private _transMatPtr;
+    private marker_transform_mat;
+    private transformGL_RH;
     private version;
     videoWidth: number;
     videoHeight: number;
     videoSize: number;
-    private videoLuma;
-    private _transMatPtr;
     constructor(pipeline: WebARKitPipeline);
     setCameraURL: (url: string) => this;
     setVideoSize: (videoWidth: number, videoHeight: number) => this;
