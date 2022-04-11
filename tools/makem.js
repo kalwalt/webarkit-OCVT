@@ -246,13 +246,13 @@ if (HAVE_NFT) DEFINES += " -D HAVE_NFT ";
 if (HAVE_2D) DEFINES += " -D HAVE_2D ";
 DEFINES += "  -DARX_EXPORTS=1 -D ARX_TARGET_PLATFORM_EMSCRIPTEN -DARVIDEO_INPUT_WEB ";
 
-//ARVIDEO_DEFINES = ' -DARVIDEO_INPUT_DUMMY -DARVIDEO_INPUT_IMAGE -DARVIDEO_INPUT_WEB '
+ARVIDEO_DEFINES = ' -DARVIDEO_INPUT_DUMMY -DARVIDEO_INPUT_IMAGE -DARVIDEO_INPUT_WEB '
 
 var FLAGS = '' + OPTIMIZE_FLAGS;
 FLAGS += ' -Wno-warn-absolute-paths ';
 FLAGS += ' -s TOTAL_MEMORY=' + MEM + ' ';
 FLAGS += ' -s USE_ZLIB=1';
-FLAGS += ' -s USE_LIBJPEG';
+FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s "EXPORTED_RUNTIME_METHODS=[\'FS\']"';
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
@@ -350,7 +350,7 @@ function clean_builds() {
 var compile_arlib = format(EMCC + ' ' + INCLUDES + ' '
     + ar_sources.join(' ')
 	//+ webarkit_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
+    + FLAGS + ' ' + DEFINES + ARVIDEO_DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
     OUTPUT_PATH);
 
 var ALL_BC = " {OUTPUT_PATH}libwebarkit.bc ";
@@ -373,7 +373,7 @@ var compile_wasm = format(EMCC + ' ' + INCLUDES + ' '
 var compile_wasm_es6 = format(EMCC + ' ' + INCLUDES + ' '
     + MAIN_SOURCES  + ALL_BC
     + WASM_FLAGS + OPENCV_LIBS
-    + FLAGS + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
+    + FLAGS + DEFINES + ARVIDEO_DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
     + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS + POST_FLAGS + '-s LLD_REPORT_UNDEFINED ' +
     ' -o {OUTPUT_PATH}{BUILD_FILE} ',
     OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_ES6_FILE);
