@@ -256,7 +256,7 @@ FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s "EXPORTED_RUNTIME_METHODS=[\'FS\']"';
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
-FLAGS += ' --llvm-lto 1 -s INVOKE_RUN=0 -msse -msse2 -msse3 -mssse3 -msimd128 '
+FLAGS += ' -msse -msse2 -msse3 -mssse3 -msimd128 '
 //FLAGS += ' -fsanitize=address '
 //FLAGS += ' -s ASSERTIONS=1 '
 //FLAGS += ' -s SAFE_HEAP=1 '
