@@ -18,6 +18,7 @@ interface ImageObj {
 interface ITrackableObj {
     width: number;
     height: number;
+    scale: number;
     trackableType: string;
     barcodeId: number;
     url: string;
@@ -93,6 +94,7 @@ export default class WebARKit {
     }): void;
     arglCameraViewRHf(glMatrix: Float32Array, glRhMatrix?: Float32Array, scale?: number): Float32Array;
     private _loadTrackable;
+    private _loadTrackableNFT;
     private _storeDataFile;
     private _queryTrackableVisibility;
 }

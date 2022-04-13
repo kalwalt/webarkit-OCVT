@@ -35,6 +35,12 @@
       width: 80
     }
 
+    var trackable = {
+      trackableType: 'nft',
+      url: './DataNFT/pinball',
+      scale: 80
+    }
+
     canvas_process = document.createElement("canvas");
 
     canvas_process.width = width
@@ -174,7 +180,7 @@
       }
     }
 
-    var getImageData = function (image, input_width, input_height) {
+    var getImageData = (image, input_width, input_height) => {
       context_process.fillStyle = 'black';
       context_process.fillRect(0, 0, input_width, input_height);
       context_process.drawImage(video, 0, 0, input_width, input_height) // draw video
