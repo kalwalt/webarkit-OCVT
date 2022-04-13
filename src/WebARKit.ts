@@ -708,6 +708,22 @@ export default class WebARKit {
   }
 
   /**
+   * Sets the logging level to use by WebARKit.
+   * @param {number} mode type for the log level.
+   */
+  public SetLogLevel = (mode: boolean) => {
+    return this.webarkit.setLogLevel(mode);
+  };
+
+  /**
+   * Gets the logging level used by WebARKit.
+   * @return {number} return the log level in use.
+   */
+  public GetLogLevel() {
+    return this.webarkit.getLogLevel();
+  };
+
+  /**
      * Used internally by the addTrackable method.
      * @param url of the file to load.
      * @returns the target.

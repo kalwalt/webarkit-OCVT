@@ -38,7 +38,7 @@
     var trackable = {
       trackableType: 'nft',
       url: './DataNFT/pinball',
-      scale: 80
+      scale: 0.5
     }
 
     canvas_process = document.createElement("canvas");
@@ -91,9 +91,14 @@
             markerRoot.matrix.fromArray(transformation)
           });
 
+         
+
 
           try {
             arController.start().then(() => {
+              console.log('arController is: ', arController);
+              var level = arController.SetLogLevel(0);
+              console.log("Log level is: ", level);
               console.log("start done");
               renderer.setSize(videoWidth, videoHeight);
               document.body.insertBefore(renderer.domElement, document.body.firstChild);
