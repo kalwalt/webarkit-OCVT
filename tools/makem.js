@@ -24,7 +24,7 @@ for (var j = 2; j < arguments.length; j++) {
 	};
 }
 
-var HAVE_NFT = 0;
+var HAVE_NFT = 1;
 var HAVE_2D = 1;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
@@ -112,6 +112,7 @@ function matchAll(patterns, prefix="") {
 	  'ARUtil/log.c',
       'ARUtil/time.c',
 	  'ARUtil/file_utils.c',
+      'ARUtil/thread_sub.c',
 	].map(function(src) {
 		return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/', src);
 	});
@@ -207,7 +208,8 @@ var webarkit_sources = [
   "WebARKitTrackableMultiSquareAuto.cpp",
   "WebARKitTracker2d.cpp",
   "WebARKitVideoSource.cpp",
-  "trackingSub.c",
+  //"trackingSub.c",
+  "trackingMod.c",
   "WebARKitPattern.cpp",
   "WebARKitTrackableMultiSquare.cpp",
   "WebARKitTracker.cpp",

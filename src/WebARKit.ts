@@ -67,6 +67,7 @@ interface ITrackable {
 interface ITrackableObj {
   width: number;
   height: number;
+  scale: number;
   trackableType: string;
   barcodeId: number;
   url: string;
@@ -567,12 +568,18 @@ export default class WebARKit {
     if (!trackableObj.width) { trackableObj.width = this.defaultMarkerWidth }
     if (!trackableObj.height) trackableObj.height = this.default2dHeight
     let fileName, trackableId
-    if (trackableObj.trackableType.includes('single') || trackableObj.trackableType.includes('2d')) {
+    if (trackableObj.trackableType.includes('single') || trackableObj.trackableType.includes('2d') || trackableObj.trackableType.includes('nft')) {
       if (trackableObj.barcodeId !== undefined) {
         fileName = trackableObj.barcodeId
         console.log('filename inside barcodeId query', fileName);
         if (!this._patternDetection.barcode) {
           this._patternDetection.barcode = true
+        }
+      } else if (trackableObj.trackableType.includes('nft')) {
+        try {
+          fileName = await this._loadTrackableNFT(trackableObj.url)
+        } catch (error) {
+          throw new Error('Error to load trackableNFT: ' + error)
         }
       } else {
         try {
@@ -588,7 +595,12 @@ export default class WebARKit {
         this.has2DTrackable = true
         trackableId = this.webarkit.addTrackable(trackableObj.trackableType + ';' + fileName + ';' + trackableObj.height)
         console.log('2d id: ', trackableId);
-      } else {
+      } else if (trackableObj.trackableType.includes('nft')) {
+        trackableId = this.webarkit.addTrackable(
+          trackableObj.trackableType + ';' + fileName + ';' + trackableObj.scale
+        );
+      }
+      else {
         trackableId = this.webarkit.addTrackable(trackableObj.trackableType + ';' + fileName + ';' + trackableObj.width)
         console.log('other id: ', trackableId);
       }
@@ -710,6 +722,25 @@ export default class WebARKit {
       console.log(e);
       return e;
     }
+  }
+
+  private async _loadTrackableNFT(url: string) {
+    // url doesn't need to be a valid url. Extensions to make it valid will be added here
+    const targetPrefix = '/markerNFT_' + this._marker_count++;
+    const extensions = ['fset', 'iset', 'fset3'];
+
+    const storeMarker = async (ext: string) => {
+      const fullUrl = url + '.' + ext;
+      const target = targetPrefix + '.' + ext;
+      const data = await WebARKitLoader.fetchRemoteData(fullUrl);
+      this._storeDataFile(data, target);
+    };
+
+    const promises = extensions.map(storeMarker, this);
+    await Promise.all(promises);
+
+    // return the internal target prefix
+    return targetPrefix;
   }
 
   // ---------------------------------------------------------------------------
