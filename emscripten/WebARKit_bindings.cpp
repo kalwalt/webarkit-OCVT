@@ -14,6 +14,7 @@ EMSCRIPTEN_BINDINGS(constant_bindings) {
     ;
 
     function("setLogLevel", &arwSetLogLevel);
+    function("getLogLevel", &arwGetLogLevel);
 
     /*** artoolkitX lifecycle functions ***/
     function("initialiseAR", &arwInitialiseAR);

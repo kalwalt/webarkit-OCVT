@@ -97,7 +97,7 @@
           try {
             arController.start().then(() => {
               console.log('arController is: ', arController);
-              var level = arController.SetLogLevel(0);
+              var level = arController.GetLogLevel();
               console.log("Log level is: ", level);
               console.log("start done");
               renderer.setSize(videoWidth, videoHeight);

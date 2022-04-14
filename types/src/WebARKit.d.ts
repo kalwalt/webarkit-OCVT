@@ -93,6 +93,8 @@ export default class WebARKit {
         data?: object;
     }): void;
     arglCameraViewRHf(glMatrix: Float32Array, glRhMatrix?: Float32Array, scale?: number): Float32Array;
+    SetLogLevel: (mode: boolean) => any;
+    GetLogLevel(): any;
     private _loadTrackable;
     private _loadTrackableNFT;
     private _storeDataFile;
