@@ -210,6 +210,7 @@ var webarkit_sources = [
   "WebARKitVideoSource.cpp",
   //"trackingSub.c",
   "trackingMod.c",
+  "trackingSubMod.cpp",
   "WebARKitPattern.cpp",
   "WebARKitTrackableMultiSquare.cpp",
   "WebARKitTracker.cpp",
