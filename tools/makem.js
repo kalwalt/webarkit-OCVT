@@ -1,122 +1,173 @@
 /*
  * Simple script for running emcc on ARToolKit
  * @author zz85 github.com/zz85
- * @author ThorstenBux github.com/ThorstenBux
+ * @author kalwat https://github.com/kalwalt
  */
 
-
 var
-	exec = require('child_process').exec,
-	path = require('path'),
-	fs = require('fs'),
-	os = require('os');
-
-const platform = os.platform();
+    exec = require('child_process').exec,
+    path = require('path'),
+    fs = require('fs');
 
 var NO_LIBAR = false;
 
 var arguments = process.argv;
 
 for (var j = 2; j < arguments.length; j++) {
-	if (arguments[j] == '--no-libar') {
-		NO_LIBAR = true;
-		console.log('Building webarkit with --no-libar option, libwebarkit will be preserved.');
-	};
+    if (arguments[j] == '--no-libar') {
+        NO_LIBAR = true;
+        console.log('Building webarkit with --no-libar option, libar will be preserved.');
+    };
 }
 
-var HAVE_NFT = 1;
-var HAVE_2D = 1;
+var HAVE_NFT = 0;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
 
 if (!EMSCRIPTEN_ROOT) {
-  console.log("\nWarning: EMSCRIPTEN environment variable not found.")
-  console.log("If you get a \"command not found\" error,\ndo `source <path to emsdk>/emsdk_env.sh` and try again.");
+    console.log("\nWarning: EMSCRIPTEN environment variable not found.")
+    console.log("If you get a \"command not found\" error,\ndo `source <path to emsdk>/emsdk_env.sh` and try again.");
 }
 
 var EMCC = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'emcc') : 'emcc';
 var EMPP = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'em++') : 'em++';
 var OPTIMIZE_FLAGS = ' -Oz '; // -Oz for smallest size
-var MEM = 512 * 1024 * 1024; // 64MB
+var MEM = (256 * 1024 * 1024); // 64MB
 
 
 var SOURCE_PATH = path.resolve(__dirname, '../emscripten/') + '/';
 var OUTPUT_PATH = path.resolve(__dirname, '../build/') + '/';
 
-var BUILD_DEBUG_FILE = 'webarkit.debug.js';
-var BUILD_WASM_FILE = 'webarkit_wasm.js';
 var BUILD_WASM_ES6_FILE = 'webarkit_ES6_wasm.js';
-var BUILD_MIN_FILE = 'webarkit.min.js';
+
+if (!fs.existsSync(path.resolve(WEBARKITLIB_ROOT, "Source/ARX/AR/include/ARX/AR/config.h"))) {
+    console.log("Renaming and moving config.h.in to config.h");
+    /*fs.copyFileSync(
+        path.resolve(WEBARKITLIB_ROOT, "Source/ARX/AR/include/ARX/AR/config.h.in"),
+        path.resolve(WEBARKITLIB_ROOT, "Source/ARX/AR/include/ARX/AR/config.h")
+    );*/
+    console.log("Done!");
+}
 
 var MAIN_SOURCES = [
-	'WebARKit_js.cpp'
+	'WebARKit_js.cpp',
+    "WebARKit_bindings.cpp"
 ];
 
-if (!fs.existsSync(path.resolve(WEBARKITLIB_ROOT, 'include/AR/config.h'))) {
-	console.log("Renaming and moving config.h.in to config.h");
-	fs.copyFileSync(
-		path.resolve(WEBARKITLIB_ROOT, 'include/AR/config.h.in'),
-		path.resolve(WEBARKITLIB_ROOT, 'include/AR/config.h')
-	);
-	console.log("Done!");
-}
+var webarkit_sources = [
+    "WebARKitTrackable2d.cpp",
+    "WebARKitTrackableNFT.cpp",
+    "WebARKitTrackerNFT.cpp",
+    "mapper.cpp",
+    "WebARKit_c.cpp",
+    "WebARKitTrackable.cpp",
+    "WebARKitTrackableSquare.cpp",
+    "WebARKitTrackerSquare.cpp",
+    "WebARKitController.cpp",
+    "WebARKitTrackableMultiSquareAuto.cpp",
+    "WebARKitTracker2d.cpp",
+    "WebARKitVideoSource.cpp",
+    //"trackingSub.c",
+    "trackingMod.c",
+    "trackingSubMod.cpp",
+    "WebARKitPattern.cpp",
+    "WebARKitTrackableMultiSquare.cpp",
+    "WebARKitTracker.cpp",
+    "WebARKitVideoView.cpp",
+].map(function(src) {
+	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/WebARKit/', src);
+});
 
-MAIN_SOURCES = MAIN_SOURCES.map(function(src) {
-  return path.resolve(SOURCE_PATH, src);
-}).join(' ');
+var webarkit_sources = webarkit_sources
+    //.concat(ar_sources)
+    .concat(ar2_sources)
+    .concat(ocvt_sources)
 
-let ar_sources;
-
-if (platform === 'win32') {
-	var glob = require("glob");
-function match(pattern) {
-    var r = glob.sync('emscripten/WebARKitLib/lib/SRC/' + pattern);
-    return r;
-}
-function matchAll(patterns, prefix="") {
-    let r = [];
-    for(let pattern of patterns) {
-        r.push(...(match(prefix + pattern)));
-    }
-    return r;
-}
-
-  ar_sources = matchAll([
-    'AR/arLabelingSub/*.c',
-    'AR/*.c',
-    'ARG/mtx.c',
-    'ARICP/*.c',
-    'ARMulti/arMultiEditConfig.c',
-    'ARMulti/arMultiFreeConfig.c',
-    'ARMulti/arMultiGetTransMat.c',
-    'ARMulti/arMultiGetTransMatStereo.c',
-    'ARMulti/arMultiReadConfigFile.c',
-    'ARUtil/image_utils.cpp',
-    'ARUtil/log.c',
-    'ARUtil/time.c',
-    'ARUtil/file_utils.c',
-]);
-} else {
-	ar_sources = [
-	  'AR/arLabelingSub/*.c',
-	  'AR/*.c',
-      'ARG/mtx.c',
-	  'ARICP/*.c',
-      'ARMulti/arMultiEditConfig.c',
-      'ARMulti/arMultiFreeConfig.c',
-      'ARMulti/arMultiGetTransMat.c',
-      'ARMulti/arMultiGetTransMatStereo.c',
-      'ARMulti/arMultiReadConfigFile.c',
-      'ARUtil/image_utils.cpp',
-	  'ARUtil/log.c',
-      'ARUtil/time.c',
-	  'ARUtil/file_utils.c',
-      'ARUtil/thread_sub.c',
-	].map(function(src) {
-		return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/', src);
-	});
-}
+var ar_sources = [
+    //'include/ARX/AR/config.h',
+    'ar3DCreateHandle.c',
+    'ar3DUtil.c',
+    'arCreateHandle.c',
+    'arDetectMarker.c',
+    'arDetectMarker2.c',
+    'arFilterTransMat.c',
+    'arGetLine.c',
+    'arGetMarkerInfo.c',
+    'arGetTransMat.c',
+    'arGetTransMatStereo.c',
+    'arImageProc.c',
+    'arLabeling.c',
+    //'arLabelingSub/arLabelingPrivate.h',
+    //'arLabelingSub/arLabelingSub.h',
+    'arLabelingSub/arLabelingSubDBIC.c',
+    'arLabelingSub/arLabelingSubDBRC.c',
+    'arLabelingSub/arLabelingSubDBZ.c',
+    'arLabelingSub/arLabelingSubDWIC.c',
+    'arLabelingSub/arLabelingSubDWRC.c',
+    'arLabelingSub/arLabelingSubDWZ.c',
+    'arLabelingSub/arLabelingSubEBIC.c',
+    'arLabelingSub/arLabelingSubEBRC.c',
+    'arLabelingSub/arLabelingSubEBZ.c',
+    'arLabelingSub/arLabelingSubEWIC.c',
+    'arLabelingSub/arLabelingSubEWRC.c',
+    'arLabelingSub/arLabelingSubEWZ.c',
+    'arMultiEditConfig.c',
+    'arMultiFreeConfig.c',
+    'arMultiGetTransMat.c',
+    'arMultiGetTransMatStereo.c',
+    'arMultiReadConfigFile.c',
+    'arPattAttach.c',
+    'arPattCreateHandle.c',
+    'arPattGetID.c',
+    'arPattLoad.c',
+    'arPattSave.c',
+    //'arRefineCorners.cpp',
+    //'arRefineCorners.h',
+    'arUtil.c',
+    'icpCalibStereo.c',
+    'icpCore.c',
+    'icpHandle.c',
+    'icpPoint.c',
+    'icpPointRobust.c',
+    'icpStereoHandle.c',
+    'icpStereoPoint.c',
+    'icpStereoPointRobust.c',
+    'icpUtil.c',
+    'mAlloc.c',
+    'mAllocDup.c',
+    'mAllocInv.c',
+    'mAllocMul.c',
+    'mAllocTrans.c',
+    'mAllocUnit.c',
+    'mDet.c',
+    'mDisp.c',
+    'mDup.c',
+    'mFree.c',
+    'mInv.c',
+    'mMul.c',
+    'mPCA.c',
+    'mSelfInv.c',
+    'mTrans.c',
+    'mUnit.c',
+    'paramChangeSize.c',
+    'paramClear.c',
+    'paramDecomp.c',
+    'paramDisp.c',
+    'paramDistortion.c',
+    'paramFile.c',
+    'paramGetPerspective.c',
+    'paramGL.c',
+    'paramLT.c',
+    'vAlloc.c',
+    'vDisp.c',
+    'vFree.c',
+    'vHouse.c',
+    'vInnerP.c',
+    'vTridiag.c'
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR/', src);
+});
 
 var ar2_sources = [
     'handle.c',
@@ -135,8 +186,42 @@ var ar2_sources = [
     'searchPoint.c',
     'coord.c',
     'util.c',
-].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/AR2/', src);
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR2/', src);
+});
+
+var arg_sources = [
+    //'arg_private.h',
+    'arg.c',
+    //'arg_gl.h',
+    'arg_gl.c',
+    //'arg_gles2.h',
+    'arg_gles2.c',
+    //'arg_gl3.h',
+    'arg_gl3.c',
+    'mtx.c',
+    'glStateCache2.c',
+    'shader_gl.c'
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARG/', src);
+});
+
+var arutil_sources = [
+    'log.c',
+    'profile.c',
+    'thread_sub_winrt.cpp',
+    'thread_sub.c',
+    'system.c',
+    'android_system_property_get.c',
+    'time.c',
+    'file_utils.c',
+    'image_utils.cpp',
+    'crypt.c',
+    'ioapi.c',
+    'unzip.c',
+    'zip.c'
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARUtil', src);
 });
 
 var arvideo_sources = [
@@ -152,7 +237,7 @@ var arvideo_sources = [
     'Image/videoImage.c',
     'Web/videoWeb.c'
 ].map(function (src) {
-    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/ARVideo', src);
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARVideo', src);
 });
 
 var kpm_sources = [
@@ -176,118 +261,99 @@ var kpm_sources = [
 	'FreakMatcher/framework/logger.cpp',
 	'FreakMatcher/framework/timers.cpp',
 ].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/KPM/', src);
+	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/KPM/', src);
 });
 
-var OCVT_sources = [
-    "OCVConfig.cpp",
-    "HarrisDetector.cpp",
-    "OCVFeatureDetector.cpp",
-    "PlanarTracker.cpp",
-    "TrackedPoint.cpp",
-    "TrackingPointSelector.cpp",
-    "HomographyInfo.cpp",
-].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVT/', src);
+var ocvt_sources = [
+    'OCVConfig.cpp',
+    'HarrisDetector.cpp',
+    'OCVFeatureDetector.cpp',
+    'PlanarTracker.cpp',
+    'TrackedPoint.cpp',
+    'TrackingPointSelector.cpp',
+    'HomographyInfo.cpp'
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/OCVT', src);
 });
 
-/*var OCVTUtil_sources = [ "image_utils.cpp"].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/OCVTUtil/', src);
-});*/
-
-var webarkit_sources = [
-  "WebARKitTrackable2d.cpp",
-  "WebARKitTrackableNFT.cpp",
-  "WebARKitTrackerNFT.cpp",
-  "mapper.cpp",
-  "WebARKit_c.cpp",
-  "WebARKitTrackable.cpp",
-  "WebARKitTrackableSquare.cpp",
-  "WebARKitTrackerSquare.cpp",
-  "WebARKitController.cpp",
-  "WebARKitTrackableMultiSquareAuto.cpp",
-  "WebARKitTracker2d.cpp",
-  "WebARKitVideoSource.cpp",
-  //"trackingSub.c",
-  "trackingMod.c",
-  "trackingSubMod.cpp",
-  "WebARKitPattern.cpp",
-  "WebARKitTrackableMultiSquare.cpp",
-  "WebARKitTracker.cpp",
-  "WebARKitVideoView.cpp",
-].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/WebARKit/', src);
-});
-
-if (HAVE_NFT) {
-  if (HAVE_NFT && HAVE_2D) {
-    ar_sources = ar_sources
-      .concat(ar2_sources)
-      .concat(arvideo_sources)
-      .concat(kpm_sources)
-      .concat(OCVT_sources)
-      //.concat(OCVTUtil_sources)
-      .concat(webarkit_sources);
-  } else {
-    ar_sources = ar_sources
-      .concat(ar2_sources)
-      .concat(arvideo_sources)
-      .concat(kpm_sources)
-      .concat(webarkit_sources);
-  }
-} else if (HAVE_2D) {
-  ar_sources = ar_sources
-    .concat(ar2_sources)
-    .concat(arvideo_sources)
-    .concat(OCVT_sources)
-    //.concat(OCVTUtil_sources)
-    .concat(webarkit_sources);
-}
-
-var DEFINES = " ";
+var DEFINES = ' ';
 if (HAVE_NFT) DEFINES += " -D HAVE_NFT ";
 if (HAVE_2D) DEFINES += " -D HAVE_2D ";
-DEFINES += "  -DARX_EXPORTS=1 -D ARX_TARGET_PLATFORM_EMSCRIPTEN -DARVIDEO_INPUT_WEB ";
+DEFINES += ' -DARX_EXPORTS=1 -DARX_TARGET_PLATFORM_EMSCRIPTEN=1 ';
 
 ARVIDEO_DEFINES = ' -DARVIDEO_INPUT_DUMMY -DARVIDEO_INPUT_IMAGE -DARVIDEO_INPUT_WEB '
 
 var FLAGS = '' + OPTIMIZE_FLAGS;
+//FLAGS += ' -std=c++11 '
 FLAGS += ' -Wno-warn-absolute-paths ';
 FLAGS += ' -s TOTAL_MEMORY=' + MEM + ' ';
 FLAGS += ' -s USE_ZLIB=1';
 FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
-FLAGS += ' -s "EXPORTED_RUNTIME_METHODS=[\'FS\']"';
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
-FLAGS += ' -msse -msse2 -msse3 -mssse3 -msimd128 '
-//FLAGS += ' -fsanitize=address '
-//FLAGS += ' -s ASSERTIONS=1 '
-//FLAGS += ' -s SAFE_HEAP=1 '
+FLAGS += ' --bind ';
 
-//var WASM_FLAGS = ' -s SINGLE_FILE=1 '
-var WASM_FLAGS = ' '
-//var ES6_FLAGS = ' -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s MODULARIZE=1 ';
-var EXPORT_FUNCTIONS = " -s EXPORTED_FUNCTIONS='['_arwUpdateAR', '_arwCapture', '_arwGetProjectionMatrix', '_arwQueryTrackableVisibilityAndTransformation', '_arwGetTrackablePatternConfig', '_arwGetTrackablePatternImage', '_arwLoadOpticalParams']' ";
+var PROJECT_SOURCE_DIR = path.resolve( WEBARKITLIB_ROOT + '/Source');
+
+var EXPORT_FUNCTIONS = " -s EXPORTED_FUNCTIONS='['_arwUpdateAR', '_arwCapture', '_arwGetProjectionMatrix', '_arwQueryTrackableVisibilityAndTransformation', '_arwGetTrackablePatternConfig', '_arwGetTrackablePatternImage', '_arwLoadOpticalParams', '_ar2VideoOpenAsyncWeb', '_ar2VideoPushInitWeb']' ";
 var EXPORTED_RUNTIME_FUNCTIONS = " -s EXPORTED_RUNTIME_METHODS='['ccall', 'cwrap', 'FS', 'setValue']' ";
 var WASM_FLAGS_SINGLE_FILE = " -s SINGLE_FILE=1 ";
 var ES6_FLAGS = " -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s EXPORT_NAME='webarkit' -s MODULARIZE=1 ";
 var POST_FLAGS = " --post-js " + path.resolve(__dirname, "../emscripten/") + "/WebARKit_additions.js ";
 
-var PRE_FLAGS = ' --pre-js ' + path.resolve(__dirname, '../js/webarkit.api.js') +' ';
-
-FLAGS += ' --bind ';
-
-/* DEBUG FLAGS */
-var DEBUG_FLAGS = ' -g ';
-DEBUG_FLAGS += ' -s ASSERTIONS=1 '
-DEBUG_FLAGS += ' --profiling '
-DEBUG_FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
-DEBUG_FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
+var ASSERTIONS_FLAGS = ' -s ASSERTIONS=1 ';
+//FLAGS += ASSERTIONS_FLAGS;
 
 var INCLUDES = [
-    path.resolve(__dirname, WEBARKITLIB_ROOT + '/include'),
-    path.resolve(__dirname, '../emscripten'),
-		path.resolve(__dirname, '../opencv/include'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARUtil/include/'),
+    OUTPUT_PATH,
+    SOURCE_PATH,
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_AR = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR/arRefineCorners.h'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_ARX = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/include/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_AR2 = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR2/include/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_ARG = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARG/include/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_ARUTIL = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARUtil/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/depends/emscripten/include/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_ARVIDEO = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARVideo/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/ARVideo/Web/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_KPM = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/KPM/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/KPM/FreakMatcher'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_OCVT = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/OCVT/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/OCVT/include/ARX/OCVT/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_WEBARKIT = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/include/'),
+].map(function (s) { return '-I' + s }).join(' ');
+
+var INCLUDES_OPENCV = [
+    path.resolve(__dirname, '../opencv/include'),
 		path.resolve(__dirname, '../opencv/modules/calib3d/include'),
 		path.resolve(__dirname, '../opencv/modules/core/include'),
 		path.resolve(__dirname, '../opencv/modules/dnn/include'),
@@ -300,13 +366,10 @@ var INCLUDES = [
 		path.resolve(__dirname, '../opencv/modules/photo/include'),
 		path.resolve(__dirname, '../opencv/modules/video/include'),
 		path.resolve(__dirname, '../opencv/build_wasm'),
-    OUTPUT_PATH,
-    SOURCE_PATH,
-    path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/KPM/FreakMatcher'),
-].map(function(s) { return '-I' + s }).join(' ');
+].map(function (s) { return '-I' + s }).join(' ');
 
 var OPENCV_LIBS = [
-	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_calib3d.a'),
+    path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_calib3d.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_core.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_dnn.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_features2d.a'),
@@ -318,6 +381,17 @@ var OPENCV_LIBS = [
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_photo.a'),
 	path.resolve(__dirname, '../opencv/build_wasm/lib/libopencv_video.a'),
 ].map(function(s) { return ' ' + s }).join(' ');
+
+var ALL_BC = [
+    path.resolve(OUTPUT_PATH + '/libwebarkit.bc'),
+    path.resolve(OUTPUT_PATH + '/libar.bc'),
+    path.resolve(OUTPUT_PATH + '/libar2.bc'),
+    path.resolve(OUTPUT_PATH + '/libarg.bc'),
+    path.resolve(__dirname, OUTPUT_PATH + '/libarutil.bc'),
+    path.resolve(__dirname, OUTPUT_PATH + '/libarvideo.bc'),
+    path.resolve(__dirname, OUTPUT_PATH + '/libkpm.bc'),
+    path.resolve(__dirname, OUTPUT_PATH + '/libocvt.bc')
+].map(function (s) { return s }).join(' ');
 
 function format(str) {
     for (var f = 1; f < arguments.length; f++) {
@@ -335,52 +409,72 @@ function clean_builds() {
 
     try {
         var files = fs.readdirSync(OUTPUT_PATH);
-        var i;
-                var filesLength = files.length;
+        var filesLength = files.length;
         if (filesLength > 0)
-				if (NO_LIBAR == true){
-                    i=1;
-				} else { i=0; }
-            for ( ;i < filesLength; i++) {
-                var filePath = OUTPUT_PATH + '/' + files[i];
-                if (fs.statSync(filePath).isFile())
-                    fs.unlinkSync(filePath);
+            if (NO_LIBAR == true) {
+                filesLength -= 1;
             }
+        for (var i = 0; i < filesLength; i++) {
+            var filePath = OUTPUT_PATH + '/' + files[i];
+            if (fs.statSync(filePath).isFile())
+                fs.unlinkSync(filePath);
+        }
     }
-    catch(e) { return console.log(e); }
+    catch (e) { return console.log(e); }
 }
 
-var compile_arlib = format(EMCC + ' ' + INCLUDES + ' '
-    + ar_sources.join(' ')
-	//+ webarkit_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ARVIDEO_DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
+var compile_arlib = format(EMCC + ' ' + ' --llvm-lto 1 --memory-init-file 0 -s INVOKE_RUN=0 -s NO_EXIT_RUNTIME=1   -msse -msse2 -msse3 -mssse3 -msimd128 ' + INCLUDES + ' '
+    + INCLUDES_AR + ' ' + INCLUDES_OPENCV + ' ' + INCLUDES_OCVT + ' ' + ar_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -DNDEBUG ' + ' -r -o {OUTPUT_PATH}libar.bc ',
     OUTPUT_PATH);
 
-var ALL_BC = " {OUTPUT_PATH}libwebarkit.bc ";
+var compile_ar2lib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_AR2 + ' ' + ar2_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libar2.bc ',
+    OUTPUT_PATH);
 
-var compile_combine = format(EMCC + ' ' + INCLUDES + ' '
-    + ALL_BC + MAIN_SOURCES
-    + FLAGS + ' -s WASM=0' + ' '  + DEBUG_FLAGS + DEFINES + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
-    OUTPUT_PATH, OUTPUT_PATH, BUILD_DEBUG_FILE);
+var compile_arglib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_ARG + ' ' + arg_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarg.bc ',
+    OUTPUT_PATH);
 
-var compile_combine_min = format(EMCC + ' ' + INCLUDES + ' '
-    + ALL_BC + MAIN_SOURCES
-    + FLAGS + ' -s WASM=0' + ' ' + DEFINES + PRE_FLAGS + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
-    OUTPUT_PATH, OUTPUT_PATH, BUILD_MIN_FILE);
+var compile_arutillib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_ARUTIL + ' ' + arutil_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarutil.bc ',
+    OUTPUT_PATH);
 
-var compile_wasm = format(EMCC + ' ' + INCLUDES + ' '
-    + ALL_BC + MAIN_SOURCES
-    + FLAGS + WASM_FLAGS + DEFINES + PRE_FLAGS + OPENCV_LIBS + ' -o {OUTPUT_PATH}{BUILD_FILE} ',
-    OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_FILE);
+var compile_arvideolib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_ARVIDEO + ' ' + arvideo_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ARVIDEO_DEFINES + ' -r -o {OUTPUT_PATH}libarvideo.bc ',
+    OUTPUT_PATH);
 
-var compile_wasm_es6 = format(EMCC + ' ' + INCLUDES + ' '
-    + MAIN_SOURCES  + ALL_BC
-    + WASM_FLAGS + OPENCV_LIBS
-    + FLAGS + DEFINES + ARVIDEO_DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
-    + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS + POST_FLAGS +
-    ' -o {OUTPUT_PATH}{BUILD_FILE} ',
-    OUTPUT_PATH, OUTPUT_PATH, BUILD_WASM_ES6_FILE);
+var compile_kpm = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_KPM + ' ' + kpm_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libkpm.bc ',
+    OUTPUT_PATH);
 
+var compile_ocvtlib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_OCVT + ' ' + INCLUDES_OPENCV + ' ' + ocvt_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libocvt.bc ',
+    OUTPUT_PATH);
+
+var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' ' 
+    + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' ' + INCLUDES_ARUTIL + ' ' 
+    + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_WEBARKIT + ' '
+    + INCLUDES_KPM + ' ' + INCLUDES_OPENCV + ' ' + webarkit_sources.join(' ')
+    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
+    OUTPUT_PATH);
+
+/*var compile_wasm_es6 = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_ARX + ' ' + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' '
+    + INCLUDES_ARUTIL + ' ' + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' '
+    + INCLUDES_OPENCV + ' ' + artoolkitxjs_sources.join(' ') + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
+    + FLAGS + ' ' + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
+    + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS  + POST_FLAGS
+    + " -o {OUTPUT_PATH}{BUILD_WASM_ES6_FILE} ",
+    OUTPUT_PATH,
+    BUILD_WASM_ES6_FILE);
+*/
 /*
  * Run commands
  */
@@ -421,13 +515,13 @@ function addJob(job) {
 
 addJob(clean_builds);
 addJob(compile_arlib);
-//addJob(compile_combine);
-//addJob(compile_wasm);
-addJob(compile_wasm_es6)
-//addJob(compile_combine_min);
-
-if (NO_LIBAR == true){
-  jobs.splice(1,1);
-}
+addJob(compile_ar2lib);
+addJob(compile_arglib);
+addJob(compile_arutillib);
+addJob(compile_arvideolib);
+addJob(compile_ocvtlib);
+addJob(compile_kpm);
+addJob(compile_webarkitlib);
+//addJob(compile_wasm_es6);*/
 
 runJob();

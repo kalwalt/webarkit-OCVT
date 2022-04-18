@@ -6,3 +6,8 @@ if [ ! -f "opencv/build_wasm/em-flags.txt" ] ; then
   cp -avr opencv/build_wasm/opencv ./
   rm opencv-em.zip
 fi
+
+cd emscripten/WebARKitLib/ARX
+cmake .
+make
+echo "Created config.h file!"

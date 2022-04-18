@@ -68,5 +68,5 @@ typings/
 
 # custom
 opencv
-build/libwebarkit.bc
+build/*.bc
 opencv-em
