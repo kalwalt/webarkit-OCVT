@@ -9,6 +9,7 @@ interface ITrackableObj {
     width: number;
     height: number;
     trackableType: string;
+    scale?: number;
     barcodeId: number;
     url: string;
 }
@@ -89,6 +90,7 @@ export default class WebARKitController {
     private _updateDetectionMode;
     private _setPatternDetectionMode;
     private _loadTrackable;
+    private _loadTrackableNFT;
     private _queryTrackableVisibility;
 }
 export {};
