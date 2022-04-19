@@ -86,6 +86,8 @@ export default class WebARKit {
     getTransformationMatrix(): Float64Array;
     getCameraMatrix(): Float32Array;
     loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
+    loadCameraParam2(urlOrData: any): Promise<string>;
+    _ajax(url: string, target: string, that: any): Promise<unknown>;
     addTrackables(trackableObj: ITrackableObj): Promise<any>;
     addEventListener(name: string, callback: object): void;
     removeEventListener(name: string, callback: object): void;
