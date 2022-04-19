@@ -8,100 +8,72 @@ declare global {
         webarkit: any;
     }
 }
-interface ImageObj {
-    videoWidth: number;
-    width: number;
-    videoHeight: number;
-    height: number;
-    data: Uint8ClampedArray;
-}
-interface ITrackableObj {
-    width: number;
-    height: number;
-    scale: number;
-    trackableType: string;
-    barcodeId: number;
-    url: string;
-}
-export interface WebARKitPipeline {
-    trackableLoaded?: (trackableId: number) => void;
-    trackablesLoaded?: (trackableIds: number[]) => void;
-    initialized: (cameraMatrix: number[]) => void;
-    tracking: (world: any, trackableId: number) => void;
-    trackingLost: () => void;
-    process: () => Promise<ImageObj>;
-}
 export default class WebARKit {
-    private id;
-    private width;
-    private height;
     instance: any;
-    webarkit: any;
-    private pipeline;
     private cameraCount;
-    private cameraParam;
-    private cameraParaFileURL;
-    private _projectionMatPtr;
-    private cameraId;
-    private cameraLoaded;
-    private camera_mat;
-    private defaultMarkerWidth;
-    private default2dHeight;
-    private framepointer;
-    private framesize;
-    private dataHeap;
-    private videoLuma;
-    private videoLumaPointer;
-    private has2DTrackable;
-    private image;
-    private listeners;
-    private _marker_count;
-    private _patternDetection;
-    private userSetPatternDetection;
-    private trackables;
-    private transform_mat;
-    private _transMatPtr;
-    private marker_transform_mat;
-    private transformGL_RH;
     private version;
-    videoWidth: number;
-    videoHeight: number;
-    videoSize: number;
-    constructor(pipeline: WebARKitPipeline);
-    setCameraURL: (url: string) => this;
-    setVideoSize: (videoWidth: number, videoHeight: number) => this;
-    static init(pipeline: WebARKitPipeline): Promise<WebARKit>;
-    private _initialize;
-    start(): Promise<void>;
-    dispose(): void;
+    initialiseAR: () => number;
+    isInitialized: () => boolean;
+    getARToolKitVersion: () => number;
+    arwStartRunningJS: (arCameraURL: string, width: number, height: number) => number;
+    pushVideoInit: (n: number, width: number, height: number, pixelformat: string, a: number, b: number) => number;
+    _arwUpdateAR: () => number;
+    _malloc: (numBytes: number) => number;
+    _free: (pointer: number) => void;
+    _arwGetProjectionMatrix: (nearPlane: number, farPlane: number, pointer: number) => Float32Array;
+    videoMalloc: {
+        framepointer: number;
+        framesize: number;
+        videoLumaPointer: number;
+        lumaFramePointer: number;
+        newFrameBoolPtr: number;
+        fillFlagIntPtr: number;
+        timeSecPtr: number;
+        timeMilliSecPtr: number;
+    };
+    _arwQueryTrackableVisibilityAndTransformation: (id: number, pointer: number) => Float32Array;
+    _arwCapture: () => number;
+    setValue: (pointer: number, a: number, type: string) => void;
+    stopRunning: () => void;
+    shutdownAR: () => void;
+    setLogLevel: (mode: boolean) => number;
+    getLogLevel: () => number;
+    addTrackable: (config: string) => number;
+    setTrackerOptionInt: (value: number, mode: number) => number;
+    getTrackerOptionInt: (value: number) => number;
+    setTrackerOptionFloat: (value: number, mode: number) => void;
+    getTrackerOptionFloat: (value: number) => number;
+    TrackableOptions: {
+        ARW_TRACKER_OPTION_SQUARE_PATTERN_DETECTION_MODE: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_THRESHOLD: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_THRESHOLD_MODE: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_MATRIX_CODE_TYPE: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_LABELING_MODE: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_BORDER_SIZE: {
+            value: number;
+        };
+        ARW_TRACKER_OPTION_SQUARE_IMAGE_PROC_MODE: {
+            value: number;
+        };
+    };
+    AR_TEMPLATE_MATCHING_COLOR_AND_MATRIX: number;
+    AR_MATRIX_CODE_DETECTION: number;
+    AR_TEMPLATE_MATCHING_COLOR: number;
+    constructor();
+    init(): Promise<this>;
     private _decorate;
-    private _converter;
-    setPatternDetectionMode(mode: number): any;
-    private _updateDetectionMode;
-    private _setPatternDetectionMode;
-    process: (image: ImageObj) => Promise<void>;
-    _processImage(image: ImageObj): void;
-    private _prepareImage;
-    getCameraProjMatrix(nearPlane?: number, farPlane?: number): Float32Array;
-    getTransformationMatrix(): Float64Array;
-    getCameraMatrix(): Float32Array;
-    loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
-    loadCameraParam2(urlOrData: any): Promise<string>;
+    private converter;
+    loadCameraParam(urlOrData: any): Promise<string>;
     _ajax(url: string, target: string, that: any): Promise<unknown>;
-    addTrackables(trackableObj: ITrackableObj): Promise<any>;
-    addEventListener(name: string, callback: object): void;
-    removeEventListener(name: string, callback: object): void;
-    dispatchEvent(event: {
-        name: string;
-        target: any;
-        data?: object;
-    }): void;
-    arglCameraViewRHf(glMatrix: Float32Array, glRhMatrix?: Float32Array, scale?: number): Float32Array;
-    SetLogLevel: (mode: boolean) => any;
-    GetLogLevel(): any;
-    private _loadTrackable;
-    private _loadTrackableNFT;
     private _storeDataFile;
-    private _queryTrackableVisibility;
 }
-export {};
