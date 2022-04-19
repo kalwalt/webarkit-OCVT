@@ -1,8 +1,8 @@
 /*
- *  index.ts
+ *  ModuleLoader.ts
  *  WebARKit
  *
- *  This file is part of WebARKit.
+ *  This file is part of WebARKit - WebARKit.
  *
  *  WebARKit is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +33,19 @@
  *  Author(s): Walter Perdan @kalwalt https://github.com/kalwalt
  *
  */
+//import Module from '../build/artoolkitxES6'
+import Module from '../build/webarkit_ES6_wasm'
 
-import WebARKit from './WebARKit'
-import WebARKitController from './WebARKitController'
-
-export default {
-  WebARKit, WebARKitController
+const ModuleLoader = {
+  init: new Promise<object>(resolve => {
+      Module({
+        onRuntimeInitialized () {
+          // need to wrap this in an object
+          // otherwise it will cause Chrome to crash
+          resolve({ instance: this });
+        }
+      })
+  })
 }
+
+export default ModuleLoader
