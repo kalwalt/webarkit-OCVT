@@ -1,5 +1,5 @@
 #include <emscripten/bind.h>
-//#include "WebARKit_js.h"
+#include "WebARKit_js.h"
 
 using namespace emscripten;
 

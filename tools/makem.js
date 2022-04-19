@@ -20,7 +20,8 @@ for (var j = 2; j < arguments.length; j++) {
     };
 }
 
-var HAVE_NFT = 0;
+var HAVE_NFT = 1;
+var HAVE_2D = 1;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
@@ -54,6 +55,10 @@ var MAIN_SOURCES = [
 	'WebARKit_js.cpp',
     "WebARKit_bindings.cpp"
 ];
+
+MAIN_SOURCES = MAIN_SOURCES.map(function(src) {
+    return path.resolve(SOURCE_PATH, src);
+  }).join(' ');
 
 var webarkit_sources = [
     "WebARKitTrackable2d.cpp",
@@ -410,16 +415,20 @@ function clean_builds() {
     try {
         var files = fs.readdirSync(OUTPUT_PATH);
         var filesLength = files.length;
-        if (filesLength > 0)
-            if (NO_LIBAR == true) {
-                filesLength -= 1;
+        if (filesLength > 0) {
+          if (NO_LIBAR == true) {
+            for (var i = 0; i < filesLength-8; i++) {
+              var filePath = OUTPUT_PATH + "/" + files[i];
+              if (fs.statSync(filePath).isFile()) fs.unlinkSync(filePath);
             }
-        for (var i = 0; i < filesLength; i++) {
-            var filePath = OUTPUT_PATH + '/' + files[i];
-            if (fs.statSync(filePath).isFile())
-                fs.unlinkSync(filePath);
+          } else {
+            for (var i = 0; i < filesLength; i++) {
+              var filePath = OUTPUT_PATH + "/" + files[i];
+              if (fs.statSync(filePath).isFile()) fs.unlinkSync(filePath);
+            }
+          }
         }
-    }
+      } 
     catch (e) { return console.log(e); }
 }
 
@@ -465,16 +474,16 @@ var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' 
     + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
     OUTPUT_PATH);
 
-/*var compile_wasm_es6 = format(EMCC + ' ' + INCLUDES + ' '
-    + INCLUDES_ARX + ' ' + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' '
-    + INCLUDES_ARUTIL + ' ' + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' '
-    + INCLUDES_OPENCV + ' ' + artoolkitxjs_sources.join(' ') + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
+var compile_wasm_es6 = format(EMCC + ' ' + MAIN_SOURCES + ' ' + INCLUDES + ' '
+    + INCLUDES_WEBARKIT + ' ' + INCLUDES_ARX + ' ' + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' '
+    + INCLUDES_ARUTIL + ' ' + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_KPM + ' '
+    + INCLUDES_OPENCV + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
     + FLAGS + ' ' + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
     + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS  + POST_FLAGS
     + " -o {OUTPUT_PATH}{BUILD_WASM_ES6_FILE} ",
     OUTPUT_PATH,
     BUILD_WASM_ES6_FILE);
-*/
+
 /*
  * Run commands
  */
@@ -522,6 +531,10 @@ addJob(compile_arvideolib);
 addJob(compile_ocvtlib);
 addJob(compile_kpm);
 addJob(compile_webarkitlib);
-//addJob(compile_wasm_es6);*/
+addJob(compile_wasm_es6);
+
+if (NO_LIBAR == true) {
+    jobs.splice(1, 9);
+  }
 
 runJob();

@@ -1,8 +1,8 @@
 
 #include <stdio.h>
-#include <AR/ar.h>
-#include <ARUtil/log.h>
-#include <AR/config.h>
+#include <ARX/AR/ar.h>
+#include <ARX/ARUtil/log.h>
+#include <ARX/AR/config.h>
 #include <emscripten.h>
 #include "WebARKit_js.h"
 
@@ -71,4 +71,4 @@ VideoParams getVideoParams() {
 //     ARWTrackableStatus status;
 //     arwGetTrackables(&count, status)
 // }
-#include "WebARKit_bindings.cpp"
+//#include "WebARKit_bindings.cpp"
