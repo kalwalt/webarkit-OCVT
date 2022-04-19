@@ -83,6 +83,8 @@ export default class WebARKit {
     _processImage(image: ImageObj): void;
     private _prepareImage;
     getCameraProjMatrix(nearPlane?: number, farPlane?: number): Float32Array;
+    getTransformationMatrix(): Float64Array;
+    getCameraMatrix(): Float32Array;
     loadCameraParam: (urlOrData: any) => Promise<string | Uint8Array>;
     addTrackables(trackableObj: ITrackableObj): Promise<any>;
     addEventListener(name: string, callback: object): void;

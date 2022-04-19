@@ -23,11 +23,6 @@
       width: width,
       height: height
     };
-    /*var trackable = {
-      trackableType: 'single_barcode',
-      barcodeId: 4,
-      width: 80
-    }*/
 
     var trackable = {
       trackableType: 'single',
@@ -84,9 +79,6 @@
             markerRoot.visible = true;
             markerRoot.matrix.fromArray(transformation)
           });
-
-         
-
 
           try {
             arController.start().then(() => {
