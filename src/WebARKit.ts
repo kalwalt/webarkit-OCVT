@@ -133,6 +133,7 @@ export default class WebARKit {
     this.cameraParaFileURL;
     this.cameraId = -1
     this.cameraLoaded = false;
+    this.cameraCount = 0;
     this.camera_mat = null
     this.framesize;
     this.image;
@@ -196,7 +197,7 @@ export default class WebARKit {
       if (this.cameraParaFileURL !== '') {
         try {
 
-          await this.loadCameraParam(this.cameraParaFileURL)
+          await this.loadCameraParam2(this.cameraParaFileURL)
           .then(arCameraURL => {
             success = this.webarkit.arwStartRunningJS(arCameraURL, this.videoWidth, this.videoHeight)
           });         
@@ -569,6 +570,46 @@ export default class WebARKit {
           });
       }
 
+    })
+  }
+
+  public async loadCameraParam2(urlOrData: any): Promise<string>{
+    return new Promise((resolve, reject) => {
+      const filename = '/camera_param_' + this.cameraCount++
+      if (typeof urlOrData === 'object' || urlOrData.indexOf('\n') > -1) { // Maybe it's a byte array
+      //if (url) {
+        const byteArray = urlOrData
+        const target = filename
+        this._storeDataFile(byteArray, target);
+        if (target) {
+          resolve(filename)
+        } else {
+          reject(new Error('Error'))
+        }
+      } else {
+        this._ajax(urlOrData, filename, this).then(() => resolve(filename)).catch((e: any) => { reject(e) })
+      }
+    })
+  }
+
+  public _ajax (url: string, target: string, that: any) {
+    return new Promise((resolve, reject) => {
+      const oReq = new XMLHttpRequest()
+      oReq.open('GET', url, true)
+      oReq.responseType = 'arraybuffer' // blob arraybuffer
+  
+      oReq.onload = function () {
+        if (this.status === 200) {
+          // console.log('ajax done for ', url);
+          const arrayBuffer = oReq.response
+          const byteArray = new Uint8Array(arrayBuffer)
+          that._storeDataFile(byteArray, target);
+          resolve(byteArray)
+        } else {
+          reject(this.status)
+        }
+      }
+      oReq.send()
     })
   }
 
