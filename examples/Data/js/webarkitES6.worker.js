@@ -22,6 +22,7 @@ var _projectionMatPtr;
 var _camera_count = 0;
 var _cameraParaFileURL;
 var videoWidth, videoHeight;
+
 var trackable = {
   trackableType: 'nft',
   url: './../../../examples/DataNFT/pinball',
@@ -29,13 +30,19 @@ var trackable = {
 };
 var videoWidth = 640;
 var videoHeight = 480;
+var cameraParam = '../../Data/camera_para.dat';
+const config = {
+  cameraParam: cameraParam,
+  width: videoWidth,
+  height: videoHeight
+};
 
 function load(msg) {
 
-  WebARKit.WebARKit.init(msg.pipeline).then((arController) => {
+  WebARKit.WebARKitController.init(0, config.cameraParam, config.width, config.height).then((arController) => {
     console.log('arController is: ', arController);
-    arController.setCameraURL('../../Data/camera_para.dat');
-    arController.setVideoSize(videoWidth, videoHeight);
+    //arController.setCameraURL('../../Data/camera_para.dat');
+    //arController.setVideoSize(videoWidth, videoHeight);
 
     /*arController.addEventListener('getMarker', (trackableInfo) => {
       console.log("TrackableID: " + trackableInfo.data.trackableId);
@@ -53,7 +60,7 @@ function load(msg) {
         postMessage({ type: 'loaded', proj: JSON.stringify(cameraMatrix) })
         if (trackable) {
           console.log('here');
-          var trackableId = arController.addTrackables(trackable);
+          var trackableId = arController.addTrackable(trackable);
         }
         /*setInterval(function () {
           ar = arController;
