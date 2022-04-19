@@ -127,7 +127,7 @@ var ar_sources = [
     'arPattGetID.c',
     'arPattLoad.c',
     'arPattSave.c',
-    //'arRefineCorners.cpp',
+    'arRefineCorners.cpp',
     //'arRefineCorners.h',
     'arUtil.c',
     'icpCalibStereo.c',
