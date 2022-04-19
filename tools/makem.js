@@ -298,6 +298,7 @@ FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
 FLAGS += ' --bind ';
 
+
 var PROJECT_SOURCE_DIR = path.resolve( WEBARKITLIB_ROOT + '/Source');
 
 var EXPORT_FUNCTIONS = " -s EXPORTED_FUNCTIONS='['_arwUpdateAR', '_arwCapture', '_arwGetProjectionMatrix', '_arwQueryTrackableVisibilityAndTransformation', '_arwGetTrackablePatternConfig', '_arwGetTrackablePatternImage', '_arwLoadOpticalParams', '_ar2VideoOpenAsyncWeb', '_ar2VideoPushInitWeb']' ";
@@ -305,7 +306,7 @@ var EXPORTED_RUNTIME_FUNCTIONS = " -s EXPORTED_RUNTIME_METHODS='['ccall', 'cwrap
 var WASM_FLAGS_SINGLE_FILE = " -s SINGLE_FILE=1 ";
 var ES6_FLAGS = " -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s EXPORT_NAME='webarkit' -s MODULARIZE=1 ";
 var POST_FLAGS = " --post-js " + path.resolve(__dirname, "../emscripten/") + "/WebARKit_additions.js ";
-
+var LLVM_FLAGS = ' --llvm-lto 1 -s INVOKE_RUN=0 -msse -msse2 -msse3 -mssse3 -msimd128 '
 var ASSERTIONS_FLAGS = ' -s ASSERTIONS=1 ';
 //FLAGS += ASSERTIONS_FLAGS;
 
@@ -432,29 +433,29 @@ function clean_builds() {
     catch (e) { return console.log(e); }
 }
 
-var compile_arlib = format(EMCC + ' ' + ' --llvm-lto 1 --memory-init-file 0 -s INVOKE_RUN=0 -s NO_EXIT_RUNTIME=1   -msse -msse2 -msse3 -mssse3 -msimd128 ' + INCLUDES + ' '
+var compile_arlib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_AR + ' ' + INCLUDES_OPENCV + ' ' + INCLUDES_OCVT + ' ' + ar_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -DNDEBUG ' + ' -r -o {OUTPUT_PATH}libar.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -DNDEBUG ' + ' -r -o {OUTPUT_PATH}libar.bc ',
     OUTPUT_PATH);
 
 var compile_ar2lib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_AR2 + ' ' + ar2_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libar2.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libar2.bc ',
     OUTPUT_PATH);
 
 var compile_arglib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_ARG + ' ' + arg_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarg.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarg.bc ',
     OUTPUT_PATH);
 
 var compile_arutillib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_ARUTIL + ' ' + arutil_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarutil.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libarutil.bc ',
     OUTPUT_PATH);
 
 var compile_arvideolib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_ARVIDEO + ' ' + arvideo_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ARVIDEO_DEFINES + ' -r -o {OUTPUT_PATH}libarvideo.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ARVIDEO_DEFINES + ' -r -o {OUTPUT_PATH}libarvideo.bc ',
     OUTPUT_PATH);
 
 var compile_kpm = format(EMCC + ' ' + INCLUDES + ' '
@@ -464,21 +465,21 @@ var compile_kpm = format(EMCC + ' ' + INCLUDES + ' '
 
 var compile_ocvtlib = format(EMCC + ' ' + INCLUDES + ' '
     + INCLUDES_OCVT + ' ' + INCLUDES_OPENCV + ' ' + ocvt_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libocvt.bc ',
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libocvt.bc ',
     OUTPUT_PATH);
 
 var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' ' 
     + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' ' + INCLUDES_ARUTIL + ' ' 
     + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_WEBARKIT + ' '
     + INCLUDES_KPM + ' ' + INCLUDES_OPENCV + ' ' + webarkit_sources.join(' ')
-    + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
+    + LLVM_FLAGS + ' ' + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
     OUTPUT_PATH);
 
 var compile_wasm_es6 = format(EMCC + ' ' + MAIN_SOURCES + ' ' + INCLUDES + ' '
     + INCLUDES_WEBARKIT + ' ' + INCLUDES_ARX + ' ' + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' '
     + INCLUDES_ARUTIL + ' ' + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_KPM + ' '
     + INCLUDES_OPENCV + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
-    + FLAGS + ' ' + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
+    + LLVM_FLAGS + ' ' + FLAGS + ' ' + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
     + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS  + POST_FLAGS
     + " -o {OUTPUT_PATH}{BUILD_WASM_ES6_FILE} ",
     OUTPUT_PATH,
