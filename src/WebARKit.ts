@@ -195,13 +195,16 @@ export default class WebARKit {
 
       if (this.cameraParaFileURL !== '') {
         try {
-          arCameraURL = await this.loadCameraParam(this.cameraParaFileURL)
+
+          await this.loadCameraParam(this.cameraParaFileURL)
+          .then(arCameraURL => {
+            success = this.webarkit.arwStartRunningJS(arCameraURL, this.videoWidth, this.videoHeight)
+          });         
 
         } catch (e) {
           throw new Error('Error loading camera param: ' + e)
         }
       }
-      success = this.webarkit.arwStartRunningJS(arCameraURL, this.videoWidth, this.videoHeight)
 
       if (success >= 0) {
         console.info('webarkit started')
