@@ -72,10 +72,9 @@
         videoWidth = 640;
         videoHeight = 480;
         var pipeline = new Pipeline(videoWidth, videoHeight)
-        WebARKit.WebARKit.init(pipeline)
-        .then((arController) => {
-            arController.setCameraURL('./Data/camera_para.dat');
-            arController.setVideoSize(videoWidth, videoHeight);
+        WebARKit.WebARKitController.init(0, config.cameraParam, config.width, config.height).then((arController) => {
+            //arController.setCameraURL('./Data/camera_para.dat');
+            //arController.setVideoSize(videoWidth, videoHeight);
           console.log('arController is: ', arController);
 
           arController.addEventListener('getMarker', (trackableInfo) => {
@@ -91,8 +90,8 @@
           try {
             arController.start().then(() => {
               console.log('arController is: ', arController);
-              var level = arController.GetLogLevel();
-              console.log("Log level is: ", level);
+              /*var level = arController.GetLogLevel();
+              console.log("Log level is: ", level);*/
               console.log("start done");
               renderer.setSize(videoWidth, videoHeight);
               document.body.insertBefore(renderer.domElement, document.body.firstChild);
@@ -148,7 +147,7 @@
 
               scene.add(markerRoot);
 
-              arController.addTrackables(trackable);
+              arController.addTrackable(trackable);
               interval = setInterval(function () {
                 imageData = getImageData(video, width, height)
                 arController.process(imageData);
