@@ -515,6 +515,24 @@ export default class WebARKit {
     return undefined
   }
 
+  /**
+   * Returns the 16-element WebGL transformation matrix used by WebARKit process to
+   * pass marker WebGL matrices to event listeners.
+   * Unique to each WebARKit.
+   * @return {Float64Array} The 16-element WebGL transformation matrix used by the WebARKit.
+   */
+   public getTransformationMatrix() {
+    return this.transform_mat
+  };
+
+  /**
+   * Returns the projection matrix computed from camera parameters for the WebARKit.
+   * @return {Float64Array} The 16-element WebGL camera matrix for the WebARKit camera parameters.
+   */
+  public getCameraMatrix() {
+    return this.camera_mat
+  };
+
   public loadCameraParam = async (urlOrData: any): Promise<string | Uint8Array> => {
     return new Promise((resolve, reject) => {
       const filename = '/camera_param_' + this.cameraCount++
