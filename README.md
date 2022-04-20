@@ -3,7 +3,13 @@ WIP -> Testing the OCVT module from [ArtoolkitX](https://github.com/webarkit/art
 Briefly this project try to integrate ARToolkit5 and ARToolkitX for WebAR thanks to Emscripten, the C and C++ was modified to adpat it to our needs. 
 
 ## Example
-Run the example in localhost with a python server or http-server and in the browser console you should see some basic message.
+Run the examples in localhost with a python server or http-server, inside the examples folder try one of them:
+
+```html
+barcode.html // using barcode marker 4
+hiro.html // using the hiro pattern
+nft_example.html // using nft marker, not yet working
+```
 
 ## Building notes
 
