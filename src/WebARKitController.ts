@@ -1009,6 +1009,4 @@ export default class WebARKitController {
     }
     return undefined
   }
-
-
 }

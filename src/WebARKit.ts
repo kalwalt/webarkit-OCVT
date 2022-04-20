@@ -109,13 +109,13 @@ export default class WebARKit {
    * - cameraCount
    * - version
    * A message is displayed in the browser console during the intitialization, for example:
-   * "WebARKit 0.7.1"
+   * "WebARKit 0.1.0"
    */
   constructor () {
     // reference to WASM module
     this.instance
     this.cameraCount = 0
-    this.version = '0.7.1'
+    this.version = '0.1.0'
     console.info('WebARKit ', this.version)
   }
 
@@ -129,7 +129,7 @@ export default class WebARKit {
    */
   public async init () {
      const runtime: runtimeInstanced = await ModuleLoader.init.catch((err: string) => {
-      console.log(err);
+      console.error(err);
       return Promise.reject(err)
     }).then((resolve: any) => {
       return resolve;
