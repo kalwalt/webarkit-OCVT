@@ -81,7 +81,7 @@ var webarkit_sources = [
     "WebARKitTracker.cpp",
     "WebARKitVideoView.cpp",
 ].map(function(src) {
-	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/lib/SRC/WebARKit/', src);
+	return path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKit/', src);
 });
 
 var webarkit_sources = webarkit_sources
@@ -354,7 +354,7 @@ var INCLUDES_OCVT = [
 ].map(function (s) { return '-I' + s }).join(' ');
 
 var INCLUDES_WEBARKIT = [
-    path.resolve(__dirname, WEBARKITLIB_ROOT + '/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKit/include/'),
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/include/'),
 ].map(function (s) { return '-I' + s }).join(' ');
 
