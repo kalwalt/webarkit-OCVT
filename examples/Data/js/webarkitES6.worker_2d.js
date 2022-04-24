@@ -41,8 +41,6 @@ function load(msg) {
 
   WebARKit.WebARKitController.init(0, config.cameraParam, config.width, config.height).then((arController) => {
     console.log('arController is: ', arController);
-    //arController.setCameraURL('../../Data/camera_para.dat');
-    //arController.setVideoSize(videoWidth, videoHeight);
 
     /*arController.addEventListener('getMarker', (trackableInfo) => {
       console.log("TrackableID: " + trackableInfo.data.trackableId);
@@ -59,12 +57,9 @@ function load(msg) {
         // We send the camera matrix outside the worker
         postMessage({ type: 'loaded', proj: JSON.stringify(cameraMatrix) })
         if (trackable) {
-          console.log('here');
           var trackableId = arController.addTrackable(trackable);
         }
-        /*setInterval(function () {
-          ar = arController;
-        }, 13)*/
+
         ar = arController;
         ar.addEventListener('getMarker', (trackableInfo) => {
           console.log("TrackableID: " + trackableInfo.data.trackableId);
