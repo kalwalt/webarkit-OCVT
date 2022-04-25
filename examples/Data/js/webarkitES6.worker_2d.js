@@ -24,7 +24,7 @@ var _cameraParaFileURL;
 var videoWidth, videoHeight;
 
 var trackable = {
-  trackableType: '2d',
+  trackableType: 'orb_2d',
   url: './../../../examples/Data/pinball.jpg',
   scale: 0.5
 };
