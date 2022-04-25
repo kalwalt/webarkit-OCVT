@@ -483,7 +483,7 @@ export default class WebARKitController {
     if (!trackableObj.width) { trackableObj.width = this.defaultMarkerWidth }
     if (!trackableObj.height) trackableObj.height = this.default2dHeight
     let fileName, trackableId
-    if (trackableObj.trackableType.includes('single') || trackableObj.trackableType.includes('2d') || trackableObj.trackableType.includes('nft')) {
+    if (trackableObj.trackableType.includes('single') || trackableObj.trackableType.includes('2d') || trackableObj.trackableType.includes('orb_2d') || trackableObj.trackableType.includes('nft')) {
       if (trackableObj.barcodeId !== undefined) {
         fileName = trackableObj.barcodeId
         console.log('filename inside barcodeId query', fileName);
@@ -506,7 +506,7 @@ export default class WebARKitController {
           this._patternDetection.template = true
         }
       }
-      if (trackableObj.trackableType.includes('2d')) {
+      if (trackableObj.trackableType.includes('2d')||trackableObj.trackableType.includes('orb_2d')) {
         this.has2DTrackable = true
         trackableId = this.webarkit.addTrackable(trackableObj.trackableType + ';' + fileName + ';' + trackableObj.height)
         console.log('2d id: ', trackableId);

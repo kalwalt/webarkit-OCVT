@@ -62,6 +62,7 @@ MAIN_SOURCES = MAIN_SOURCES.map(function(src) {
 
 var webarkit_sources = [
     "WebARKitTrackable2d.cpp",
+    "WebARKitTrackableOrb2d.cpp",
     "WebARKitTrackableNFT.cpp",
     "WebARKitTrackerNFT.cpp",
     "mapper.cpp",
@@ -72,6 +73,7 @@ var webarkit_sources = [
     "WebARKitController.cpp",
     "WebARKitTrackableMultiSquareAuto.cpp",
     "WebARKitTracker2d.cpp",
+    "WebARKitTrackerOrb2d.cpp",
     "WebARKitVideoSource.cpp",
     //"trackingSub.c",
     "trackingMod.c",
@@ -273,7 +275,8 @@ var ocvt_sources = [
     'OCVConfig.cpp',
     'HarrisDetector.cpp',
     'OCVFeatureDetector.cpp',
-    'PlanarTracker.cpp',
+    //'PlanarTracker.cpp',
+    'PlanarOrbTracker.cpp',
     'TrackedPoint.cpp',
     'TrackingPointSelector.cpp',
     'HomographyInfo.cpp'
