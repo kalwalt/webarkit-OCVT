@@ -24,7 +24,7 @@ var _cameraParaFileURL;
 var videoWidth, videoHeight;
 
 var trackable = {
-  trackableType: '2d',
+  trackableType: 'orb_2d',
   url: './../../../examples/Data/pinball.jpg',
   scale: 0.5
 };
@@ -46,7 +46,7 @@ function load(msg) {
       console.log("TrackableID: " + trackableInfo.data.trackableId);
       markerResult = {type: "found", matrixGL_RH: JSON.stringify(trackableInfo.data.transformation)};
     });*/
-
+   
     try {
 
       arController.start().then(_ => {
@@ -66,7 +66,7 @@ function load(msg) {
           markerResult = {type: "found", matrixGL_RH: JSON.stringify(trackableInfo.data.transformation)};
         });
       })
-
+      
     } catch (e) {
       console.error(e)
     }
