@@ -22,6 +22,7 @@ for (var j = 2; j < arguments.length; j++) {
 
 var HAVE_NFT = 1;
 var HAVE_2D = 1;
+var DBG = true;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
@@ -33,7 +34,8 @@ if (!EMSCRIPTEN_ROOT) {
 
 var EMCC = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'emcc') : 'emcc';
 var EMPP = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'em++') : 'em++';
-var OPTIMIZE_FLAGS = ' -Oz '; // -Oz for smallest size
+
+var OPTIMIZE_FLAGS = DBG ? ' -O0 ' : ' -Oz '; // -Oz for smallest size
 var MEM = (256 * 1024 * 1024); // 64MB
 
 
@@ -294,6 +296,7 @@ ARVIDEO_DEFINES = ' -DARVIDEO_INPUT_DUMMY -DARVIDEO_INPUT_IMAGE -DARVIDEO_INPUT_
 
 var FLAGS = '' + OPTIMIZE_FLAGS;
 //FLAGS += ' -std=c++11 '
+//FLAGS += ' -v '
 FLAGS += ' -Wno-warn-absolute-paths ';
 FLAGS += ' -s TOTAL_MEMORY=' + MEM + ' ';
 FLAGS += ' -s USE_ZLIB=1';
@@ -301,6 +304,12 @@ FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
 FLAGS += ' --bind ';
+
+if (DBG){
+  FLAGS += ' -gsource-map -g3 '
+  FLAGS += ' -s ASSERTIONS=2 '
+  FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
+}
 
 
 var PROJECT_SOURCE_DIR = path.resolve( WEBARKITLIB_ROOT + '/Source');
@@ -311,8 +320,6 @@ var WASM_FLAGS_SINGLE_FILE = " -s SINGLE_FILE=1 ";
 var ES6_FLAGS = " -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s EXPORT_NAME='webarkit' -s MODULARIZE=1 ";
 var POST_FLAGS = " --post-js " + path.resolve(__dirname, "../emscripten/") + "/WebARKit_additions.js ";
 var LLVM_FLAGS = ' --llvm-lto 1 -s INVOKE_RUN=0 -msse -msse2 -msse3 -mssse3 -msimd128 '
-var ASSERTIONS_FLAGS = ' -s ASSERTIONS=1 ';
-//FLAGS += ASSERTIONS_FLAGS;
 
 var INCLUDES = [
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR/include/'),
@@ -433,7 +440,7 @@ function clean_builds() {
             }
           }
         }
-      } 
+      }
     catch (e) { return console.log(e); }
 }
 
@@ -472,8 +479,8 @@ var compile_ocvtlib = format(EMCC + ' ' + INCLUDES + ' '
     + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libocvt.bc ',
     OUTPUT_PATH);
 
-var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' ' 
-    + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' ' + INCLUDES_ARUTIL + ' ' 
+var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' '
+    + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' ' + INCLUDES_ARUTIL + ' '
     + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_WEBARKIT + ' '
     + INCLUDES_KPM + ' ' + INCLUDES_OPENCV + ' ' + webarkit_sources.join(' ')
     + LLVM_FLAGS + ' ' + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
