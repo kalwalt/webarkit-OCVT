@@ -10,7 +10,6 @@
   <script src="./Data/js/third_party/three.js/stats.min.js"></script>
 
   <script src="../dist/WebARKit.js"></script>
-    <script src="Pipeline.js"></script>
   <script>
 
     let ar1, interval;
@@ -71,7 +70,7 @@
 
         videoWidth = 640;
         videoHeight = 480;
-        var pipeline = new Pipeline(videoWidth, videoHeight)
+
         WebARKit.WebARKitController.init(0, config.cameraParam, config.width, config.height).then((arController) => {
             //arController.setCameraURL('./Data/camera_para.dat');
             //arController.setVideoSize(videoWidth, videoHeight);
@@ -84,7 +83,7 @@
             markerRoot.matrix.fromArray(transformation)
           });
 
-         
+
 
 
           try {
