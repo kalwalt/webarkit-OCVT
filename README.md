@@ -6,9 +6,11 @@ Briefly this project try to integrate ARToolkit5 and ARToolkitX for WebAR thanks
 Run the examples in localhost with a python server or http-server, inside the examples folder try one of them:
 
 ```html
-barcode.html // using barcode marker 4
-hiro.html // using the hiro pattern
-nft_example.html // using nft marker, not yet working
+barcode.html // using barcode marker 4.
+hiro.html // using the hiro pattern.
+nft_example.html // using nft marker, not yet working.
+2d_example.html // using 2d tracking, just for testing, not tracking.
+orb_2d_example.html // using orb_2d tracking, still experimental not working as expected. 
 ```
 
 ## Building notes
