@@ -2,9 +2,17 @@
 
 <head>
   <title>A simple example with a barcode marker</title>
+  <link rel="stylesheet" href="./Data/css/style.css">
 </head>
 
 <body>
+  <div id="stats" class="ui stats">
+    <div id="stats1" class="stats-item">
+      <p class="stats-item-title">
+        Main
+      </p>
+    </div>
+  </div>
   <video loop autoplay muted playsinline id="video"></video>
   <script src="./Data/js/third_party/three.js/three.min.js"></script>
   <script src="./Data/js/third_party/three.js/stats.min.js"></script>
@@ -12,6 +20,9 @@
   <script src="../dist/WebARKit.js"></script>
 
   <script>
+    var statsMain = new Stats();
+    statsMain.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.getElementById('stats1').appendChild(statsMain.dom);
 
     let ar1, interval;
     var canvas_process, context_process;
@@ -67,97 +78,98 @@
         videoWidth = 640;
         videoHeight = 480;
         WebARKit.WebARKitController.init(0, config.cameraParam, config.width, config.height)
-        .then((arController) => {
+          .then((arController) => {
             //arController.setCameraURL('./Data/camera_para.dat');
             //arController.setVideoSize(videoWidth, videoHeight);
-          console.log('arController is: ', arController);
+            console.log('arController is: ', arController);
 
-          arController.addEventListener('getMarker', (trackableInfo) => {
-            console.log("TrackableID: " + trackableInfo.data.trackableId + " visible");
-            const transformation = trackableInfo.data.transformation;
-            markerRoot.visible = true;
-            markerRoot.matrix.fromArray(transformation)
-          });
-
-          try {
-            arController.start().then(() => {
-              console.log('arController is: ', arController);
-              /*var level = arController.GetLogLevel();
-              console.log("Log level is: ", level);*/
-              console.log("start done");
-              renderer.setSize(videoWidth, videoHeight);
-              document.body.insertBefore(renderer.domElement, document.body.firstChild);
-
-              const camMatrix = arController.getCameraProjMatrix(0.0001, 100000);
-
-              camera.projectionMatrix.fromArray(camMatrix);
-              camera.updateProjectionMatrix();
-
-              var videoTex = new THREE.Texture(video);
-              videoTex.minFilter = THREE.LinearFilter;
-              videoTex.flipY = false;
-
-              // Then create a plane textured with the video.
-              var plane = new THREE.Mesh(
-                new THREE.PlaneBufferGeometry(2, 2),
-                new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide })
-              );
-
-              // The video plane shouldn't care about the z-buffer.
-              plane.material.depthTest = false;
-              plane.material.depthWrite = false;
-
-              // Create a camera and a scene for the video plane and
-              // add the camera and the video plane to the scene.
-              var videoCamera = new THREE.OrthographicCamera(-1, 1, -1, 1, -1, 1);
-              var videoScene = new THREE.Scene();
-              videoScene.add(plane);
-              videoScene.add(videoCamera);
-
-              var light = new THREE.PointLight(0xffffff);
-              light.position.set(400, 500, 100);
-              scene.add(light);
-              var light = new THREE.PointLight(0xffffff);
-              light.position.set(-400, -500, -100);
-              scene.add(light);
-
-              markerRoot.matrixAutoUpdate = false;
-
-              // Add the marker models and suchlike into your marker root object.
-
-              var cube = new THREE.Mesh(
-                new THREE.BoxGeometry(40, 40, 40),
-                new THREE.MeshLambertMaterial({ color: 0x44ffff, wireframe: false })
-              );
-              cube.position.z = 20
-              markerRoot.add(cube);
+            arController.addEventListener('getMarker', (trackableInfo) => {
+              console.log("TrackableID: " + trackableInfo.data.trackableId + " visible");
+              const transformation = trackableInfo.data.transformation;
               markerRoot.visible = true;
-
-              // displaying axes onto the marker
-              var axesHelper = new THREE.AxesHelper(500);
-              markerRoot.add(axesHelper);
-
-              scene.add(markerRoot);
-
-              arController.addTrackable(trackable);
-              interval = setInterval(function () {
-                imageData = getImageData(video, width, height)
-                arController.process(imageData);
-                videoTex.needsUpdate = true;
-                const ac = renderer.autoClear;
-                renderer.autoClear = false;
-                renderer.clear();
-                renderer.render(videoScene, videoCamera);
-                renderer.render(scene, camera);
-                renderer.autoClear = ac;
-              }, 13);
-              ar1 = arController;
+              markerRoot.matrix.fromArray(transformation)
             });
-          }
-          catch (e) {
-            console.log(e);
-          }
-        });
+
+            try {
+              arController.start().then(() => {
+                console.log('arController is: ', arController);
+                /*var level = arController.GetLogLevel();
+                console.log("Log level is: ", level);*/
+                console.log("start done");
+                renderer.setSize(videoWidth, videoHeight);
+                document.body.insertBefore(renderer.domElement, document.body.firstChild);
+
+                const camMatrix = arController.getCameraProjMatrix(0.0001, 100000);
+
+                camera.projectionMatrix.fromArray(camMatrix);
+                camera.updateProjectionMatrix();
+
+                var videoTex = new THREE.Texture(video);
+                videoTex.minFilter = THREE.LinearFilter;
+                videoTex.flipY = false;
+
+                // Then create a plane textured with the video.
+                var plane = new THREE.Mesh(
+                  new THREE.PlaneBufferGeometry(2, 2),
+                  new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide })
+                );
+
+                // The video plane shouldn't care about the z-buffer.
+                plane.material.depthTest = false;
+                plane.material.depthWrite = false;
+
+                // Create a camera and a scene for the video plane and
+                // add the camera and the video plane to the scene.
+                var videoCamera = new THREE.OrthographicCamera(-1, 1, -1, 1, -1, 1);
+                var videoScene = new THREE.Scene();
+                videoScene.add(plane);
+                videoScene.add(videoCamera);
+
+                var light = new THREE.PointLight(0xffffff);
+                light.position.set(400, 500, 100);
+                scene.add(light);
+                var light = new THREE.PointLight(0xffffff);
+                light.position.set(-400, -500, -100);
+                scene.add(light);
+
+                markerRoot.matrixAutoUpdate = false;
+
+                // Add the marker models and suchlike into your marker root object.
+
+                var cube = new THREE.Mesh(
+                  new THREE.BoxGeometry(40, 40, 40),
+                  new THREE.MeshLambertMaterial({ color: 0x44ffff, wireframe: false })
+                );
+                cube.position.z = 20
+                markerRoot.add(cube);
+                markerRoot.visible = true;
+
+                // displaying axes onto the marker
+                var axesHelper = new THREE.AxesHelper(500);
+                markerRoot.add(axesHelper);
+
+                scene.add(markerRoot);
+
+                arController.addTrackable(trackable);
+                interval = setInterval(function () {
+                  imageData = getImageData(video, width, height)
+                  arController.process(imageData);
+                  videoTex.needsUpdate = true;
+                  const ac = renderer.autoClear;
+                  renderer.autoClear = false;
+                  renderer.clear();
+                  renderer.render(videoScene, videoCamera);
+                  renderer.render(scene, camera);
+                  renderer.autoClear = ac;
+                  statsMain.update();
+                }, 13);
+                ar1 = arController;
+              });
+            }
+            catch (e) {
+              console.log(e);
+            }
+          });
       })
 
     window.closeVideo = function () {
