@@ -2,15 +2,26 @@
 
 <head>
   <title>A simple example with a barcode marker</title>
+  <link rel="stylesheet" href="./Data/css/style.css">
 </head>
 
 <body>
+  <div id="stats" class="ui stats">
+    <div id="stats1" class="stats-item">
+      <p class="stats-item-title">
+        Main
+      </p>
+    </div>
+  </div>
   <video loop autoplay muted playsinline id="video"></video>
   <script src="./Data/js/third_party/three.js/three.min.js"></script>
   <script src="./Data/js/third_party/three.js/stats.min.js"></script>
 
   <script src="../dist/WebARKit.js"></script>
   <script>
+    var statsMain = new Stats();
+    statsMain.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.getElementById('stats1').appendChild(statsMain.dom);
 
     let ar1, interval;
     var canvas_process, context_process;
@@ -157,6 +168,7 @@
                 renderer.render(videoScene, videoCamera);
                 renderer.render(scene, camera);
                 renderer.autoClear = ac;
+                statsMain.update();
               }, 13);
               ar1 = arController;
             });
