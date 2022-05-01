@@ -319,7 +319,10 @@ var EXPORTED_RUNTIME_FUNCTIONS = " -s EXPORTED_RUNTIME_METHODS='['ccall', 'cwrap
 var WASM_FLAGS_SINGLE_FILE = " -s SINGLE_FILE=1 ";
 var ES6_FLAGS = " -s EXPORT_ES6=1 -s USE_ES6_IMPORT_META=0 -s EXPORT_NAME='webarkit' -s MODULARIZE=1 ";
 var POST_FLAGS = " --post-js " + path.resolve(__dirname, "../emscripten/") + "/WebARKit_additions.js ";
-var LLVM_FLAGS = ' --llvm-lto 1 -msse -msse2 -msse3 -mssse3 -msimd128 '
+//var LLVM_FLAGS = ' --llvm-lto 1 ';
+var LLVM_FLAGS = ' ';
+var MSSE_FLAGS = ' -msse -msse2 -msse3 -mssse3 -msimd128 '
+LLVM_FLAGS += MSSE_FLAGS;
 
 var INCLUDES = [
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/AR/include/'),
