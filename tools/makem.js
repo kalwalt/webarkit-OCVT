@@ -22,7 +22,7 @@ for (var j = 2; j < arguments.length; j++) {
 
 var HAVE_NFT = 1;
 var HAVE_2D = 1;
-var DBG = false;
+var DBG = true;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
