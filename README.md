@@ -15,4 +15,19 @@ orb_2d_example.html // using orb_2d tracking, still experimental , it detect and
 
 ## Building notes
 
-You need to run the build script in the main folder `./build.sh`. The script will download the required opencv libs and modules to be used in the project. Pay attention that using other opencv version will not work out of the box. Last, you need to use emsdk (Emscripten) **3.1.7** because this project was compiled with this version (and opencv libs too)
+First you need to load the WebARKitLib submodule with `git submodule update --init` then you can run the build script in the main folder `./build.sh`. The script will download the required opencv libs and modules to be used in the project. Pay attention that using other opencv version will not work out of the box. Last, you need to use emsdk (Emscripten) **3.1.7** because this project was compiled with this version (and opencv libs too).
+### Steps for building:
+Install all node modules:
+
+`npm install`
+
+If you make changes in the WebARKitLib run:
+
+`npm run build`
+
+Then run:
+
+`npm run dev-ts`
+
+This last will compile the dist library (in dev mode).
+ 
