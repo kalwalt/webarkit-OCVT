@@ -21,10 +21,10 @@
     "type": "git",
     "url": "https://github.com/kalwalt/webarkit-OCVT"
   },
-  "homepage": "",
+  "homepage": "https://github.com/kalwalt/webarkit-OCVT",
   "contributors": [],
   "bugs": {
-    "url": ""
+    "url": "https://github.com/kalwalt/webarkit-OCVT/issues"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",
