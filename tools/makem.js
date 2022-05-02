@@ -306,8 +306,10 @@ FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
 FLAGS += ' --bind ';
 
 if (DBG){
-  FLAGS += ' -gsource-map -g3 '
-  FLAGS += ' -s ASSERTIONS=2 '
+  FLAGS += ' -gsource-map -g3 ';
+  //FLAGS += ' -fsanitize=address ';
+  //FLAGS += ' -s STACK_OVERFLOW_CHECK=2 -asan-stack ';
+  FLAGS += ' -s ASSERTIONS=2 ';
   FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
 }
 
