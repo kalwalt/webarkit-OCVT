@@ -279,12 +279,17 @@ var ocvt_sources = [
     'OCVFeatureDetector.cpp',
     'OrbFeatureDetector.cpp',
     'PlanarTracker.cpp',
-    'PlanarOrbTracker.cpp',
     'TrackedPoint.cpp',
     'TrackingPointSelector.cpp',
     'HomographyInfo.cpp'
 ].map(function (src) {
     return path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/OCVT', src);
+});
+
+var webarkittrackers_sources = [
+    'PlanarOrbTracker.cpp',
+].map(function (src) {
+    return path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKitTrackers', src);
 });
 
 var DEFINES = ' ';
@@ -312,9 +317,6 @@ if (DBG){
   FLAGS += ' -s ASSERTIONS=2 ';
   FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
 }
-
-
-var PROJECT_SOURCE_DIR = path.resolve( WEBARKITLIB_ROOT + '/Source');
 
 var EXPORT_FUNCTIONS = " -s EXPORTED_FUNCTIONS='['_arwUpdateAR', '_arwCapture', '_arwGetProjectionMatrix', '_arwQueryTrackableVisibilityAndTransformation', '_arwGetTrackablePatternConfig', '_arwGetTrackablePatternImage', '_arwLoadOpticalParams']' ";
 var EXPORTED_RUNTIME_FUNCTIONS = " -s EXPORTED_RUNTIME_METHODS='['ccall', 'cwrap', 'FS', 'setValue']' ";
@@ -369,6 +371,13 @@ var INCLUDES_OCVT = [
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/OCVT/include/ARX/OCVT/'),
 ].map(function (s) { return '-I' + s }).join(' ');
 
+var INCLUDES_WEBARKITTRACKERS = [
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKitTrackers/include/WebARKitTrackers/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKitTrackers/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/include/'),
+    path.resolve(__dirname, WEBARKITLIB_ROOT + ' '),
+].map(function (s) { return '-I' + s }).join(' ');
+
 var INCLUDES_WEBARKIT = [
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/WebARKit/include/'),
     path.resolve(__dirname, WEBARKITLIB_ROOT + '/ARX/include/'),
@@ -412,7 +421,8 @@ var ALL_BC = [
     path.resolve(__dirname, OUTPUT_PATH + '/libarutil.bc'),
     path.resolve(__dirname, OUTPUT_PATH + '/libarvideo.bc'),
     path.resolve(__dirname, OUTPUT_PATH + '/libkpm.bc'),
-    path.resolve(__dirname, OUTPUT_PATH + '/libocvt.bc')
+    path.resolve(__dirname, OUTPUT_PATH + '/libocvt.bc'),
+    path.resolve(__dirname, OUTPUT_PATH + '/libwebarkittrackers.bc')
 ].map(function (s) { return s }).join(' ');
 
 function format(str) {
@@ -484,17 +494,22 @@ var compile_ocvtlib = format(EMCC + ' ' + INCLUDES + ' '
     + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libocvt.bc ',
     OUTPUT_PATH);
 
+var compile_webarkittrackerslib = format(EMCC + ' ' + INCLUDES + ' '
+    + INCLUDES_WEBARKITTRACKERS + ' ' + INCLUDES_OPENCV + ' ' + webarkittrackers_sources.join(' ')
+    + FLAGS + ' ' + LLVM_FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkittrackers.bc ',
+    OUTPUT_PATH);
+
 var compile_webarkitlib = format(EMCC + ' ' + INCLUDES + ' ' + INCLUDES_ARX + ' '
     + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' ' + INCLUDES_ARUTIL + ' '
     + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_WEBARKIT + ' '
-    + INCLUDES_KPM + ' ' + INCLUDES_OPENCV + ' ' + webarkit_sources.join(' ')
+    + INCLUDES_WEBARKITTRACKERS + ' ' + INCLUDES_KPM + ' ' + INCLUDES_OPENCV + ' ' + webarkit_sources.join(' ')
     + LLVM_FLAGS + ' ' + FLAGS + ' ' + DEFINES + ' -r -o {OUTPUT_PATH}libwebarkit.bc ',
     OUTPUT_PATH);
 
 var compile_wasm_es6 = format(EMCC + ' ' + MAIN_SOURCES + ' ' + INCLUDES + ' '
     + INCLUDES_WEBARKIT + ' ' + INCLUDES_ARX + ' ' + INCLUDES_AR2 + ' ' + INCLUDES_ARG + ' '
     + INCLUDES_ARUTIL + ' ' + INCLUDES_ARVIDEO + ' ' + INCLUDES_OCVT + ' ' + INCLUDES_KPM + ' '
-    + INCLUDES_OPENCV + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
+    + INCLUDES_WEBARKITTRACKERS + ' ' + INCLUDES_OPENCV + ' ' + ALL_BC + ' ' +  OPENCV_LIBS
     + LLVM_FLAGS + ' ' + FLAGS + ' ' + DEFINES + ES6_FLAGS + WASM_FLAGS_SINGLE_FILE
     + EXPORT_FUNCTIONS + EXPORTED_RUNTIME_FUNCTIONS  + POST_FLAGS
     + " -o {OUTPUT_PATH}{BUILD_WASM_ES6_FILE} ",
@@ -546,6 +561,7 @@ addJob(compile_arglib);
 addJob(compile_arutillib);
 addJob(compile_arvideolib);
 addJob(compile_ocvtlib);
+addJob(compile_webarkittrackerslib);
 addJob(compile_kpm);
 addJob(compile_webarkitlib);
 addJob(compile_wasm_es6);
