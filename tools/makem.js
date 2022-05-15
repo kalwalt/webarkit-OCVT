@@ -22,7 +22,7 @@ for (var j = 2; j < arguments.length; j++) {
 
 var HAVE_NFT = 1;
 var HAVE_2D = 1;
-var DBG = true;
+var DBG = false;
 
 var EMSCRIPTEN_ROOT = process.env.EMSCRIPTEN;
 var WEBARKITLIB_ROOT = process.env.WEBARKITLIB_ROOT || path.resolve(__dirname, "../emscripten/WebARKitLib");
@@ -79,7 +79,8 @@ var webarkit_sources = [
     "WebARKitVideoSource.cpp",
     //"trackingSub.c",
     "trackingMod.c",
-    "trackingSubMod.cpp",
+    "trackingMod2d.c",
+    //"trackingSubMod.cpp",
     "WebARKitPattern.cpp",
     "WebARKitTrackableMultiSquare.cpp",
     "WebARKitTracker.cpp",
@@ -312,7 +313,7 @@ FLAGS += ' --bind ';
 
 if (DBG){
   FLAGS += ' -gsource-map -g3 ';
-  //FLAGS += ' -fsanitize=address ';
+  FLAGS += ' -fsanitize=address ';
   //FLAGS += ' -s STACK_OVERFLOW_CHECK=2 -asan-stack ';
   FLAGS += ' -s ASSERTIONS=2 ';
   FLAGS += '  -s DEMANGLE_SUPPORT=1 ';
