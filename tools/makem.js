@@ -79,7 +79,8 @@ var webarkit_sources = [
     "WebARKitVideoSource.cpp",
     //"trackingSub.c",
     "trackingMod.c",
-    "trackingSubMod.cpp",
+    "trackingMod2d.c",
+    //"trackingSubMod.cpp",
     "WebARKitPattern.cpp",
     "WebARKitTrackableMultiSquare.cpp",
     "WebARKitTracker.cpp",
@@ -308,6 +309,7 @@ FLAGS += ' -s USE_ZLIB=1';
 FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
+FLAGS += ' -s LLD_REPORT_UNDEFINED';
 FLAGS += ' --bind ';
 
 if (DBG){
