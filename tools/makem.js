@@ -36,7 +36,7 @@ var EMCC = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'emcc') : 'emcc';
 var EMPP = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'em++') : 'em++';
 
 var OPTIMIZE_FLAGS = DBG ? ' -O0 ' : ' -Oz '; // -Oz for smallest size
-var MEM = (256 * 1024 * 1024); // 64MB
+var MEM = (128 * 1024 * 1024); // 64MB
 
 
 var SOURCE_PATH = path.resolve(__dirname, '../emscripten/') + '/';
@@ -160,6 +160,7 @@ var ar_sources = [
     'mSelfInv.c',
     'mTrans.c',
     'mUnit.c',
+    'matrixCode.c',
     'paramChangeSize.c',
     'paramClear.c',
     'paramDecomp.c',
