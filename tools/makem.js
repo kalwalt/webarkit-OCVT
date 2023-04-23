@@ -36,7 +36,7 @@ var EMCC = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'emcc') : 'emcc';
 var EMPP = EMSCRIPTEN_ROOT ? path.resolve(EMSCRIPTEN_ROOT, 'em++') : 'em++';
 
 var OPTIMIZE_FLAGS = DBG ? ' -O0 ' : ' -Oz '; // -Oz for smallest size
-var MEM = (256 * 1024 * 1024); // 64MB
+var MEM = (128 * 1024 * 1024); // 64MB
 
 
 var SOURCE_PATH = path.resolve(__dirname, '../emscripten/') + '/';
@@ -79,7 +79,8 @@ var webarkit_sources = [
     "WebARKitVideoSource.cpp",
     //"trackingSub.c",
     "trackingMod.c",
-    "trackingSubMod.cpp",
+    "trackingMod2d.c",
+    //"trackingSubMod.cpp",
     "WebARKitPattern.cpp",
     "WebARKitTrackableMultiSquare.cpp",
     "WebARKitTracker.cpp",
@@ -159,6 +160,7 @@ var ar_sources = [
     'mSelfInv.c',
     'mTrans.c',
     'mUnit.c',
+    'matrixCode.c',
     'paramChangeSize.c',
     'paramClear.c',
     'paramDecomp.c',
@@ -308,6 +310,7 @@ FLAGS += ' -s USE_ZLIB=1';
 FLAGS += ' -s USE_LIBJPEG=1';
 FLAGS += ' --memory-init-file 0 '; // for memless file
 FLAGS += ' -s ALLOW_MEMORY_GROWTH=1';
+//FLAGS += ' -s LLD_REPORT_UNDEFINED';
 FLAGS += ' --bind ';
 
 if (DBG){
