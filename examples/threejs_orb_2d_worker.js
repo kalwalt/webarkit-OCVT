@@ -24,6 +24,8 @@ function start(markerUrl, video, input_width, input_height, render_update, track
   var context_process = canvas_process.getContext('2d');
   var targetCanvas = document.querySelector("#canvas");
 
+  var overlayCanvas = document.querySelector("#overlayCanvas");
+
   var renderer = new THREE.WebGLRenderer({ canvas: targetCanvas, alpha: true, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -121,7 +123,11 @@ function start(markerUrl, video, input_width, input_height, render_update, track
           found(null);
           break;
         }
+        case 'warped': {
+          warped(msg);
+          break;
       }
+    }
       track_update();
       process();
     };
@@ -134,6 +140,39 @@ function start(markerUrl, video, input_width, input_height, render_update, track
       world = null;
     } else {
       world = JSON.parse(msg.matrixGL_RH);
+    }
+  };
+
+  function clearOverlayCtx() {
+    const overlayCtx = overlayCanvas.getContext("2d");
+    overlayCtx.clearRect(0, 0, vw, vh);
+  }
+
+  function drawCorners(corners) {
+    const overlayCtx = overlayCanvas.getContext("2d");
+    clearOverlayCtx();
+  
+    overlayCtx.beginPath();
+    overlayCtx.strokeStyle = "blue";
+    overlayCtx.lineWidth = 3;
+  
+    // [x1,y1,x2,y2,x3,y3,x4,y4]
+    overlayCtx.moveTo(corners[0], corners[1]);
+    overlayCtx.lineTo(corners[2], corners[3]);
+    overlayCtx.lineTo(corners[4], corners[5]);
+    overlayCtx.lineTo(corners[6], corners[7]);
+    overlayCtx.lineTo(corners[0], corners[1]);
+  
+    overlayCtx.stroke();
+  }
+
+  var warped = function(msg) {
+    if (!msg) {
+      console.log("no warped");
+    } else {
+      console.log("warped", msg.data);
+      clearOverlayCtx();
+      drawCorners(msg.data);
     }
   };
 
